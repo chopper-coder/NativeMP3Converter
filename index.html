@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>音檔轉 MP3｜NativeMP3Converter</title>
+  <meta name="referrer" content="no-referrer">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <header class="hero"><div class="hero-inner">
+    <div class="brand-row"><div class="cat" aria-hidden="true">😺</div><div><p class="eyebrow">CHOPPER LOCAL TOOL</p><h1>音檔轉 MP3</h1><p class="subtitle">V1.0｜Fresh GitHub Repository Edition</p></div></div>
+    <div class="privacy-badges" aria-label="隱私特性"><span>🔒 本機處理</span><span>🚫 零上傳</span><span>🌐 零 CDN</span><span>📁 資料夾批次</span><span>♻️ 中斷續作</span><span>🛡️ 原檔保護</span><span>📚 大量批次</span><span>🧠 Native Core v0.4.1</span><span>🌊 WAV 真串流</span><span>🛡️ PCM 防當機</span><span>📦 第三方套件 0</span></div>
+  </div></header>
+
+  <div id="bootAlert" class="boot-alert" hidden></div>
+  <main class="layout">
+    <section class="panel controls" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle">轉換設定</h2>
+      <div class="field"><label for="mode">輸出聲道</label><select id="mode"><option value="normal">保持來源聲道（最多 Stereo）</option><option value="mono">合併為 Mono</option></select></div>
+      <div class="field"><label for="bitrate">輸出音質／位元率</label><select id="bitrate">
+        <option value="64">64 kbps｜語音省空間</option>
+        <option value="96">96 kbps｜語音清晰</option>
+        <option value="128" selected>128 kbps｜標準（建議）</option>
+        <option value="192">192 kbps｜高音質</option>
+        <option value="256">256 kbps｜更高音質</option>
+        <option value="320">320 kbps｜最高位元率</option>
+      </select><div id="qualityHint" class="small-state">128 kbps｜一般錄音與日常使用建議</div></div>
+      <div class="small-state privacy-note">🔒 隱私預設：Native 版不複製來源音檔的標題、作者、註解等中繼資料。</div>
+      <div class="field inline-check"><input id="skipMp3" type="checkbox" checked><label for="skipMp3">已是 MP3 的檔案預設略過，避免再次有損轉碼</label></div>
+
+      <h2 class="subheading">輸出與資料夾</h2>
+      <div class="field"><label for="outputMode">轉換後檔案存放位置</label><select id="outputMode">
+        <option value="alongside" disabled>與來源音檔放在同一資料夾（工作資料夾模式）</option>
+        <option value="custom" selected>自己選擇輸出資料夾</option>
+        <option value="workspace-results" disabled>來源資料夾內建立「MP3_轉換結果」</option>
+        <option value="zip">瀏覽器下載（單檔 MP3／多檔 ZIP，相容模式）</option>
+      </select></div>
+      <div class="output-folder-actions">
+        <button id="chooseOutputBtn" class="btn ghost" type="button">📁 選擇輸出資料夾</button>
+        <button id="openOutputLocationBtn" class="btn secondary" type="button" disabled>📂 開啟轉換後檔案位置</button>
+      </div>
+      <div id="outputFolderState" class="output-destination-state">尚未選擇輸出位置。</div>
+      <div id="outputLocationHelp" class="small-state">ℹ️ 網頁受瀏覽器安全限制，無法直接命令 Windows 檔案總管跳到資料夾；「開啟轉換後檔案位置」會以該位置開啟系統資料夾選擇視窗，方便立即定位。</div>
+      <button id="restoreFoldersBtn" class="btn ghost full" type="button" hidden>♻️ 恢復上次資料夾權限</button>
+      <button id="forgetFoldersBtn" class="btn ghost full" type="button" hidden>🔐 忘記已儲存的資料夾 Handle</button>
+      <div class="field inline-check"><input id="preserveStructure" type="checkbox" checked><label for="preserveStructure">保留原始子資料夾結構</label></div>
+      <div class="field"><label for="conflictPolicy">遇到已存在的 MP3</label><select id="conflictPolicy"><option value="skip" selected>跳過（最安全）</option><option value="rename">自動重新命名</option><option value="overwrite">重新轉換並取代</option></select></div>
+      <div class="field inline-check"><input id="resumeMode" type="checkbox" checked><label for="resumeMode">接續模式：來源未變更且已有完成紀錄時自動跳過</label></div>
+      <div class="field inline-check"><input id="autoSave" type="checkbox" checked><label for="autoSave">完成後自動輸出：資料夾模式每檔立即寫入；相容模式單檔直接下載、多檔在安全容量內自動下載 ZIP</label></div>
+
+      <div class="info-card"><strong>資料夾模式說明</strong><p>若要讓 MP3 自動存回原音檔旁邊，請使用「📂 開啟工作資料夾」取得資料夾讀寫權限，之後選擇「與來源音檔放在同一資料夾」。一般「選擇音檔／匯入資料夾」受瀏覽器安全限制，只能讀取來源，無法得知並直接寫回原資料夾；此時可自己選擇輸出資料夾或使用瀏覽器下載。</p></div>
+      <div class="info-card soft"><strong>Native Core v0.4.1｜Streaming</strong><p>相容的 PCM／Float WAV（32、44.1、48 kHz；Mono／Stereo）採兩階段低記憶體串流：先分塊掃描峰值，再逐塊 PCM → MP3 frame。直接資料夾輸出會先寫入專用 .part 暫存，MP3 全檔 frame 驗證通過後才提交正式檔名。其他壓縮格式仍使用瀏覽器 Web Audio 完整解碼，因此仍受記憶體門檻保護。自行實作音質與成熟 LAME / FFmpeg 不完全相同。</p></div>
+      <details class="details"><summary>Native Encoder、記憶體、離線與紀錄</summary><div id="engineState" class="engine-state">✅ CHOPPER Native MP3 Core v0.4.1｜WAV Streaming｜純 JavaScript｜0 第三方套件</div><div id="memoryPolicyState" class="engine-state">⏳ 正在計算目前裝置的 PCM 安全門檻…</div><div id="offlineState" class="engine-state">⏳ 正在檢查離線程式快取…</div><button id="updateAppBtn" class="mini" type="button" hidden>🆕 立即更新程式</button><div id="storageState" class="engine-state">⏳ 正在檢查瀏覽器暫存空間…</div><pre id="log" class="log" aria-live="polite"></pre></details>
+    </section>
+
+    <section class="panel workspace" aria-labelledby="filesTitle">
+      <div class="section-head"><div><h2 id="filesTitle">音檔工作區</h2><p id="sourceState">可選單檔、整個資料夾，或開啟可直接讀寫的工作資料夾。</p></div><button id="clearBtn" class="btn ghost" type="button">清空</button></div>
+
+      <div class="source-actions">
+        <button id="pickFilesBtn" class="btn secondary" type="button">🎵 選擇音檔</button>
+        <button id="pickFolderBtn" class="btn secondary" type="button">📁 匯入資料夾</button>
+        <button id="openWorkspaceBtn" class="btn primary" type="button">📂 開啟工作資料夾</button>
+      </div>
+      <input id="fileInput" class="hidden-input" type="file" multiple accept="audio/*,.m4a,.aac,.wav,.flac,.ogg,.oga,.opus,.webm,.mp3,.aif,.aiff,.amr">
+      <input id="folderInput" class="hidden-input" type="file" multiple webkitdirectory directory accept="audio/*,.m4a,.aac,.wav,.flac,.ogg,.oga,.opus,.webm,.mp3,.aif,.aiff,.amr">
+
+      <div id="scanSummary" class="summary-card" hidden></div>
+      <div class="list-tools" id="listTools" hidden><input id="searchInput" type="search" placeholder="搜尋檔名或路徑"><select id="statusFilter" aria-label="篩選狀態"><option value="all">全部狀態</option><option value="ready">待轉換</option><option value="done">成功</option><option value="skipped">略過</option><option value="problem">失敗／停止</option></select><span id="filterCount" class="small-state"></span></div>
+      <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="拖曳音檔或點擊選擇音檔"><div class="drop-icon">🎵</div><div class="drop-title">把音檔拖到這裡</div><div class="drop-sub">或點一下選擇音檔；整個資料夾請使用上方「匯入資料夾」</div></div>
+
+      <div id="emptyState" class="empty-state">目前還沒有音檔 😺</div>
+      <div id="fileList" class="file-list" aria-live="polite"></div>
+
+
+      <section id="outputResultsPanel" class="output-results" hidden aria-labelledby="outputResultsTitle">
+        <div class="section-head compact-head"><div><h3 id="outputResultsTitle">本次輸出檔案</h3><p id="outputResultsSummary" class="small-state">尚無輸出結果。</p></div><div class="mini-actions"><button id="retryFailedBtn" class="mini" type="button" disabled>🔄 只重試失敗檔</button><button id="cleanupSidecarsBtn" class="mini" type="button" disabled>🧹 清理殘留暫存</button></div></div>
+        <div id="outputResultsList" class="output-results-list"></div>
+      </section>
+
+      <div class="overall" id="overallWrap" hidden><div class="overall-row"><span id="overallText">準備中</span><span id="overallPercent">0%</span></div><div class="progress-track"><div id="overallBar" class="progress-bar"></div></div></div>
+
+      <div class="actions"><button id="convertBtn" class="btn primary" type="button">🚀 開始轉 MP3</button><button id="cancelBtn" class="btn danger" type="button" disabled>停止轉換</button><button id="stopScanBtn" class="btn danger" type="button" hidden>停止掃描</button><button id="zipBtn" class="btn secondary" type="button" disabled>📦 再次下載全部 ZIP</button></div>
+      <div class="actions compact"><button id="csvBtn" class="btn ghost" type="button" disabled>📝 匯出 CSV 紀錄</button><button id="jsonBtn" class="btn ghost" type="button" disabled>🧾 匯出 JSON 紀錄</button><button id="clearRecoveryBtn" class="btn ghost" type="button">🧹 清除 7 天續作暫存</button></div>
+      <p id="statusText" class="status" role="status">請加入音檔。</p>
+    </section>
+  </main>
+
+  <footer><p>所有音訊皆在瀏覽器本機處理；不會把音檔上傳到伺服器。MP3 編碼核心為純 JavaScript 自行實作，不載入 FFmpeg、WASM、CDN 或第三方影音套件。V1.0 對相容 WAV 使用真正分塊串流；其他格式先估算解碼後 PCM 工作記憶體。直接寫檔採 .part 暫存＋完整 MP3 frame 驗證後提交。</p><p>來源格式由目前瀏覽器的 Web Audio 解碼能力決定；直接寫入資料夾功能則取決於 File System Access 支援。原始 MP3 永不直接被同名轉碼結果覆蓋。</p></footer>
+  <script defer src="./js/boot-check.js"></script>
+  <script defer src="./js/bootstrap.js"></script>
+</body>
+</html>
