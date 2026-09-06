@@ -25,3 +25,9 @@
 ## 已知限制
 
 Native MP3 Core v0.4.1 是自行實作的功能性 encoder，尚未具備成熟 LAME encoder 的完整 psychoacoustic model、short block、bit reservoir、adaptive Huffman codebook、joint stereo、VBR 或 gapless metadata。
+
+## V1.0.1 Direct Module Boot Hotfix
+- 移除 runtime `bootstrap.js` dynamic import 啟動層。
+- `index.html` 直接載入 same-origin `js/app.js` ES Module。
+- Service Worker 白名單資產改採 network-first、cache fallback；導覽亦維持 network-first。
+- Boot 診斷會在 15 秒後以 `fetch(..., cache:"no-store")` 檢查 app.js HTTP 狀態與 Content-Type，僅連線同源。

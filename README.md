@@ -1,4 +1,4 @@
-# 音檔轉 MP3 V1.0｜Fresh GitHub Repository Edition
+# 音檔轉 MP3 V1.0.1｜Direct Module Boot Hotfix
 
 這是一個重新建立的乾淨專案。專案名稱建議使用 **NativeMP3Converter**，不要覆蓋舊的 `AudioToMP3` Repository。
 
@@ -63,9 +63,14 @@ node scripts/self_test.mjs
 node scripts/adversarial_test.mjs
 node scripts/output_ttl_test.mjs
 node scripts/dom_boot_test.mjs
-node scripts/bootstrap_contract_test.mjs
+node scripts/direct_module_boot_test.mjs
 node scripts/output_folder_workflow_test.mjs
 node scripts/external_codec_test.mjs
 ```
 
 `external_codec_test.mjs` 只在測試環境有 FFmpeg 時，把它當獨立 decoder 驗證 MP3；正式網站不載入 FFmpeg。
+
+
+## V1.0.1 啟動修正
+
+GitHub Pages 直接使用 `<script type="module" src="./js/app.js"></script>` 啟動，不再經過 bootstrap.js 的 dynamic import 與 query-string。Service Worker 對白名單資產採 network-first、cache fallback，降低舊快取卡住新版模組的風險。

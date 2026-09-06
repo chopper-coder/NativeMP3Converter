@@ -1,7 +1,7 @@
 from pathlib import Path
 import json,re,sys
 root=Path(__file__).resolve().parents[1]
-required=[root/'index.html',root/'css/style.css',root/'js/app.js',root/'js/boot-check.js',root/'js/bootstrap.js',root/'js/native-audio-decoder.js',root/'js/pcm-safety.js',root/'js/wav-stream.js',root/'js/wav-mp3-streamer.js',root/'js/safe-file-commit.js',root/'js/mp3/native-mp3-encoder.js',root/'js/mp3/mp3-validator.js',root/'js/mp3/analysis-window.js',root/'js/mp3/encoder-worker.js',root/'js/zip-store.js',root/'js/output-store.js',root/'js/recovery-store.js',root/'js/path-utils.js',root/'js/fingerprint.js',root/'js/handle-store.js',root/'sw.js',root/'scripts/self_test.mjs',root/'scripts/dom_boot_test.mjs',root/'scripts/output_folder_workflow_test.mjs',root/'scripts/external_codec_test.mjs',root/'scripts/adversarial_test.mjs',root/'scripts/output_ttl_test.mjs',root/'scripts/hash_manifest_policy_test.py',root/'scripts/bootstrap_contract_test.mjs',root/'scripts/security_check.py',root/'scripts/update_hashes.py',root/'scripts/verify_hashes.py',root/'start_local.bat',root/'README.md',root/'SECURITY.md',root/'SECURITY_AUDIT_V1.0.md',root/'GITHUB_UPLOAD_GUIDE.md']
+required=[root/'index.html',root/'css/style.css',root/'js/app.js',root/'js/boot-check.js',root/'js/native-audio-decoder.js',root/'js/pcm-safety.js',root/'js/wav-stream.js',root/'js/wav-mp3-streamer.js',root/'js/safe-file-commit.js',root/'js/mp3/native-mp3-encoder.js',root/'js/mp3/mp3-validator.js',root/'js/mp3/analysis-window.js',root/'js/mp3/encoder-worker.js',root/'js/zip-store.js',root/'js/output-store.js',root/'js/recovery-store.js',root/'js/path-utils.js',root/'js/fingerprint.js',root/'js/handle-store.js',root/'sw.js',root/'scripts/self_test.mjs',root/'scripts/dom_boot_test.mjs',root/'scripts/output_folder_workflow_test.mjs',root/'scripts/external_codec_test.mjs',root/'scripts/adversarial_test.mjs',root/'scripts/output_ttl_test.mjs',root/'scripts/hash_manifest_policy_test.py',root/'scripts/direct_module_boot_test.mjs',root/'scripts/security_check.py',root/'scripts/update_hashes.py',root/'scripts/verify_hashes.py',root/'start_local.bat',root/'README.md',root/'SECURITY.md',root/'SECURITY_AUDIT_V1.0.md',root/'GITHUB_UPLOAD_GUIDE.md']
 for p in required:
     if not p.exists(): print('FAIL missing',p);sys.exit(1)
 runtime=[root/'index.html',root/'sw.js',*list((root/'js').rglob('*.js'))]
@@ -13,7 +13,7 @@ for p in runtime:
 for p in root.rglob('*'):
     if p.is_file() and (p.suffix.lower()=='.wasm' or 'ffmpeg-core' in p.name.lower()): print('FAIL forbidden runtime binary:',p);sys.exit(1)
 index=(root/'index.html').read_text('utf-8')
-for token in ['V1.0｜Fresh GitHub Repository Edition','id="folderInput"','id="openWorkspaceBtn"','id="outputMode"','id="openOutputLocationBtn"','id="forgetFoldersBtn"','id="resumeMode"','id="autoSave"','id="bitrate"','id="searchInput"','id="stopScanBtn"','id="retryFailedBtn"','id="cleanupSidecarsBtn"','id="outputResultsPanel"','id="memoryPolicyState"','第三方套件 0','Content-Security-Policy','frame-src \'none\'','script-src \'self\'','object-src \'none\'','name="referrer" content="no-referrer"']:
+for token in ['V1.0.1｜Direct Module Boot Hotfix','id="folderInput"','id="openWorkspaceBtn"','id="outputMode"','id="openOutputLocationBtn"','id="forgetFoldersBtn"','id="resumeMode"','id="autoSave"','id="bitrate"','id="searchInput"','id="stopScanBtn"','id="retryFailedBtn"','id="cleanupSidecarsBtn"','id="outputResultsPanel"','id="memoryPolicyState"','第三方套件 0','Content-Security-Policy','frame-src \'none\'','script-src \'self\'','object-src \'none\'','name="referrer" content="no-referrer"']:
     if token not in index: print('FAIL index marker missing:',token);sys.exit(1)
 if "'unsafe-inline'" in index or "'unsafe-eval'" in index: print('FAIL weak CSP');sys.exit(1)
 if re.search(r'\son[a-z]+\s*=',index,re.I): print('FAIL inline event handler in HTML');sys.exit(1)
@@ -43,7 +43,7 @@ enc=(root/'js/mp3/native-mp3-encoder.js').read_text('utf-8')
 for token in ['StreamingMp3Encoder','coreVersion:"0.4.1"','sampleRates:[32000,44100,48000]','encodeMp3']:
     if token not in enc: print('FAIL encoder marker missing:',token);sys.exit(1)
 sw=(root/'sw.js').read_text('utf-8')
-for token in ['chopper-native-mp3-v1-cache-1','CACHE_PREFIX','k.startsWith(CACHE_PREFIX)','cache:"reload"','ASSET_URLS','!ASSET_URLS.has(url.href)','ACTIVATE_UPDATE','e.request.mode==="navigate"','cache:"no-store"','wav-stream.js','safe-file-commit.js','mp3-validator.js']:
+for token in ['chopper-native-mp3-v1-cache-2','CACHE_PREFIX','k.startsWith(CACHE_PREFIX)','cache:"reload"','ASSET_URLS','!ASSET_URLS.has(url.href)','ACTIVATE_UPDATE','e.request.mode==="navigate"','cache:"no-store"','wav-stream.js','safe-file-commit.js','mp3-validator.js']:
     if token not in sw: print('FAIL service worker marker missing:',token);sys.exit(1)
 manifest_policy=(root/'scripts/verify_hashes.py').read_text('utf-8')
 for token in ["WEB_UPLOAD_METADATA = {'.gitignore', '.nojekyll'}", "r.startswith('.github/')", "repository metadata must not be hash-enforced"]:
@@ -56,4 +56,8 @@ print('PASS strict CSP / no inline handlers')
 print('PASS no FFmpeg/WASM runtime assets')
 print('PASS Service Worker cache allow-list')
 print('PASS zero npm dependencies')
-print('PASS NativeMP3Converter V1.0 fresh namespace / branch-deploy / TTL / output markers')
+
+if '<script type="module" src="./js/app.js"></script>' not in index: print('FAIL direct module boot tag missing');sys.exit(1)
+if 'bootstrap.js' in index: print('FAIL legacy bootstrap still referenced by index');sys.exit(1)
+if (root/'js/bootstrap.js').exists(): print('FAIL legacy bootstrap file should not ship');sys.exit(1)
+print('PASS NativeMP3Converter V1.0.1 direct-module / fresh namespace / branch-deploy / TTL / output markers')

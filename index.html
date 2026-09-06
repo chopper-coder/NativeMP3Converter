@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="hero"><div class="hero-inner">
-    <div class="brand-row"><div class="cat" aria-hidden="true">😺</div><div><p class="eyebrow">CHOPPER LOCAL TOOL</p><h1>音檔轉 MP3</h1><p class="subtitle">V1.0｜Fresh GitHub Repository Edition</p></div></div>
+    <div class="brand-row"><div class="cat" aria-hidden="true">😺</div><div><p class="eyebrow">CHOPPER LOCAL TOOL</p><h1>音檔轉 MP3</h1><p class="subtitle">V1.0.1｜Direct Module Boot Hotfix</p></div></div>
     <div class="privacy-badges" aria-label="隱私特性"><span>🔒 本機處理</span><span>🚫 零上傳</span><span>🌐 零 CDN</span><span>📁 資料夾批次</span><span>♻️ 中斷續作</span><span>🛡️ 原檔保護</span><span>📚 大量批次</span><span>🧠 Native Core v0.4.1</span><span>🌊 WAV 真串流</span><span>🛡️ PCM 防當機</span><span>📦 第三方套件 0</span></div>
   </div></header>
 
@@ -90,6 +90,6 @@
 
   <footer><p>所有音訊皆在瀏覽器本機處理；不會把音檔上傳到伺服器。MP3 編碼核心為純 JavaScript 自行實作，不載入 FFmpeg、WASM、CDN 或第三方影音套件。V1.0 對相容 WAV 使用真正分塊串流；其他格式先估算解碼後 PCM 工作記憶體。直接寫檔採 .part 暫存＋完整 MP3 frame 驗證後提交。</p><p>來源格式由目前瀏覽器的 Web Audio 解碼能力決定；直接寫入資料夾功能則取決於 File System Access 支援。原始 MP3 永不直接被同名轉碼結果覆蓋。</p></footer>
   <script defer src="./js/boot-check.js"></script>
-  <script defer src="./js/bootstrap.js"></script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>

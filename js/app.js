@@ -443,4 +443,10 @@ try{
   els.engine.textContent=`✅ CHOPPER Native MP3 Core v0.4.1｜${els.bitrate.value} kbps｜自適應 frame bit allocation｜純 JavaScript｜0 第三方套件`;
   updateQualityHint();updateSourceCapabilities();render();updateScanSummary();updateStorageState();setupServiceWorker();initRestorableHandles();
   window.__AUDIO_MP3_APP_READY__=true;
-}catch(err){window.__AUDIO_MP3_BOOT_ERROR__=String(err?.message||err);throw err;}
+  if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("audio-mp3-app-ready",{detail:{version:"1.0.1"}}));
+}catch(err){
+  const message=String(err?.message||err||"未知錯誤");
+  window.__AUDIO_MP3_BOOT_ERROR__=message;
+  if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("audio-mp3-app-error",{detail:{message,stack:String(err?.stack||"")}}));
+  throw err;
+}

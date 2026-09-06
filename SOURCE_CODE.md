@@ -1,6 +1,6 @@
 # Source Code Map — NativeMP3Converter V1.0
 
-- `js/bootstrap.js`：啟動器；載入 app，僅處理本專案 `chopper-native-mp3-v1-*` cache / scope。
+- `js/app.js`：直接以原生 ES Module 啟動；不再使用 dynamic import bootstrap。
 - `js/boot-check.js`：啟動錯誤顯示與慢載入提示。
 - `js/app.js`：UI、批次、資料夾、Recovery、自動輸出。
 - `js/wav-stream.js`：bounded RIFF/WAV parser 與 chunk PCM decode。
