@@ -1,4 +1,4 @@
-# GitHub 上傳教學 — NativeMP3Converter V1.0.3
+# GitHub 上傳教學 — NativeMP3Converter V1.0.4
 
 ## 建議：建立全新的 Repository
 
@@ -36,7 +36,7 @@ https://你的帳號.github.io/NativeMP3Converter/
 
 新專案使用新的 Service Worker cache / IndexedDB namespace，不會讀取舊 `AudioToMP3` 的續作資料。
 
-### V1.0.3 必看
+### V1.0.4 必看
 
 網站啟動已改成單一 `js/app.bundle.js`，不再依賴十幾支 ES Module 同時載入。請確認 Repository 根目錄至少有：
 
@@ -49,3 +49,8 @@ sw.js
 ```
 
 若這 5 個 Runtime 檔案完整，選擇音檔與資料夾按鈕就能初始化；其餘 `js/*.js` 是原始碼與測試來源。
+
+
+## 與來源音檔放在同一資料夾
+
+V1.0.4 起，「與來源音檔放在同一資料夾」不再因為先用一般檔案選擇器而鎖住。選取此模式時，網站會直接要求你授權來源資料夾；目前清單中的音檔必須全部核對通過，才會取得寫回權限。若選錯資料夾或取消授權，原始檔不會被變更。

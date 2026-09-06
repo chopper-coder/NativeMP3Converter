@@ -17,7 +17,7 @@
       if(!r.ok){show(`⚠️ app.bundle.js 無法取得：HTTP ${r.status}。請確認 GitHub Repository 的 js/app.bundle.js 已上傳。`,"error");return;}
       const ct=String(r.headers.get("content-type")||"");
       if(!/javascript|ecmascript|text\/plain/i.test(ct)){show(`⚠️ app.bundle.js 回傳的 Content-Type 異常：${ct||"未提供"}。請確認 GitHub Pages 部署來源。`,"error");return;}
-      show("⚠️ app.bundle.js 可以取得，但主程式仍未完成初始化。V1.0.3 已使用 Classic Bundle 並修正 File System Access picker ID 長度；請按 Ctrl+F5 後再試。若仍失敗，請提供此提示上方或 Console 第一個紅色錯誤。","error");
+      show("⚠️ app.bundle.js 可以取得，但主程式仍未完成初始化。V1.0.4 已使用 Classic Bundle，並加入來源同資料夾授權引導與 File System Access 相容性修正；請按 Ctrl+F5 後再試。若仍失敗，請提供此提示上方或 Console 第一個紅色錯誤。","error");
     }catch(err){show(`⚠️ 無法檢查 app.bundle.js：${String(err?.message||err)}。請確認網路與 GitHub Pages。`,"error");}
   }
   window.addEventListener("DOMContentLoaded",()=>setTimeout(diagnose,5000));

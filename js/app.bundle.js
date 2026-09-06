@@ -798,7 +798,7 @@ const $=s=>document.querySelector(s);
 const els={
   fileInput:$("#fileInput"),folderInput:$("#folderInput"),pickFiles:$("#pickFilesBtn"),pickFolder:$("#pickFolderBtn"),openWorkspace:$("#openWorkspaceBtn"),dropZone:$("#dropZone"),
   fileList:$("#fileList"),empty:$("#emptyState"),mode:$("#mode"),bitrate:$("#bitrate"),skipMp3:$("#skipMp3"),
-  outputMode:$("#outputMode"),chooseOutput:$("#chooseOutputBtn"),openOutputLocation:$("#openOutputLocationBtn"),restoreFolders:$("#restoreFoldersBtn"),forgetFolders:$("#forgetFoldersBtn"),outputFolderState:$("#outputFolderState"),preserveStructure:$("#preserveStructure"),conflictPolicy:$("#conflictPolicy"),resumeMode:$("#resumeMode"),autoSave:$("#autoSave"),qualityHint:$("#qualityHint"),
+  outputMode:$("#outputMode"),chooseOutput:$("#chooseOutputBtn"),authorizeSource:$("#authorizeSourceBtn"),openOutputLocation:$("#openOutputLocationBtn"),restoreFolders:$("#restoreFoldersBtn"),forgetFolders:$("#forgetFoldersBtn"),outputFolderState:$("#outputFolderState"),preserveStructure:$("#preserveStructure"),conflictPolicy:$("#conflictPolicy"),resumeMode:$("#resumeMode"),autoSave:$("#autoSave"),qualityHint:$("#qualityHint"),
   convert:$("#convertBtn"),cancel:$("#cancelBtn"),stopScan:$("#stopScanBtn"),clear:$("#clearBtn"),zip:$("#zipBtn"),csv:$("#csvBtn"),json:$("#jsonBtn"),clearRecovery:$("#clearRecoveryBtn"),retryFailed:$("#retryFailedBtn"),cleanupSidecars:$("#cleanupSidecarsBtn"),outputResultsPanel:$("#outputResultsPanel"),outputResultsSummary:$("#outputResultsSummary"),outputResultsList:$("#outputResultsList"),status:$("#statusText"),sourceState:$("#sourceState"),scanSummary:$("#scanSummary"),
   listTools:$("#listTools"),search:$("#searchInput"),statusFilter:$("#statusFilter"),filterCount:$("#filterCount"),
   overallWrap:$("#overallWrap"),overallText:$("#overallText"),overallPercent:$("#overallPercent"),overallBar:$("#overallBar"),engine:$("#engineState"),offline:$("#offlineState"),storage:$("#storageState"),memoryState:$("#memoryPolicyState"),updateApp:$("#updateAppBtn"),log:$("#log")
@@ -852,7 +852,7 @@ async function addFiles(list,{folderMode=false,replace=false}={}){
   if(busy||scanning)return;
   if(replace){clearQueueOnly();scanIgnored=0;scanMp3=0;}
   let added=0,ignored=0,mp3=0;
-  if(folderMode){sourceMode="folder-input";workspaceRootHandle=null;workspaceName=sourceRootNameFromFiles(list)}else if(sourceMode!=="workspace"){sourceMode="files";workspaceRootHandle=null;workspaceName=""}
+  if(folderMode){sourceMode="folder-input";workspaceRootHandle=null;workspaceName=sourceRootNameFromFiles(list)}else{sourceMode="files";workspaceRootHandle=null;workspaceName=""}
   scanCancelRequested=false;setScanning(folderMode);
   try{
     const all=Array.from(list||[]);
@@ -885,11 +885,12 @@ function refreshOutputDestinationState(){
   if(!els.outputFolderState)return;
   let text="",kind="";
   if(els.outputMode.value==="alongside"){
-    if(workspaceRootHandle){text=`✅ MP3 會直接存回各來源音檔所在資料夾｜工作資料夾：${workspaceName}`;kind="ready"}
-    else{text="⚠️ 要直接存回來源旁邊，請使用「📂 開啟工作資料夾」取得來源資料夾讀寫權限。";kind="warn"}
+    if(workspaceRootHandle){text=`✅ MP3 會直接存回來源音檔所在資料夾｜已授權：${workspaceName}`;kind="ready"}
+    else if(canDirectWrite()){text="📂 已選擇『與來源音檔放在同一資料夾』。請授權來源音檔所在資料夾；程式會核對目前清單後才允許直接寫回。";kind="warn"}
+    else{text="⚠️ 此瀏覽器不支援直接寫回來源資料夾，請改用自訂輸出或瀏覽器下載。";kind="warn"}
   }else if(els.outputMode.value==="workspace-results"){
     if(workspaceRootHandle){text=`✅ MP3 會輸出到：${workspaceName}/${RESULT_FOLDER}`;kind="ready"}
-    else{text="⚠️ 尚未開啟可寫入的工作資料夾。";kind="warn"}
+    else{text="⚠️ 尚未授權可寫入的來源資料夾。";kind="warn"}
   }else if(els.outputMode.value==="custom"){
     if(customOutputHandle){text=`✅ 自訂輸出資料夾：${customOutputHandle.name}${els.preserveStructure.checked?"｜保留原始子資料夾結構":"｜集中輸出"}`;kind="ready"}
     else{text="📁 尚未選擇輸出資料夾；開始轉換時也會提示選擇。";kind="warn"}
@@ -903,18 +904,24 @@ function hasLocatableOutput(){
   return false;
 }
 function updateSourceCapabilities(){
-  const workspace=!!workspaceRootHandle;
-  for(const opt of els.outputMode.options){if(opt.value==="workspace-results"||opt.value==="alongside")opt.disabled=!workspace}
-  if((els.outputMode.value==="workspace-results"||els.outputMode.value==="alongside")&&!workspace)els.outputMode.value=canDirectWrite()?"custom":"zip";
-  els.chooseOutput.hidden=els.outputMode.value!=="custom";els.preserveStructure.disabled=busy||els.outputMode.value==="alongside";
-  if(sourceMode==="workspace")els.sourceState.textContent=`📂 工作資料夾：${workspaceName}｜可直接存回原音檔旁邊，或改選其他輸出資料夾`;
-  else if(sourceMode==="folder-input")els.sourceState.textContent=`📁 匯入資料夾：${workspaceName}｜來源僅讀；可另選輸出資料夾。若要寫回原處，請改用「開啟工作資料夾」`;
-  else els.sourceState.textContent="🎵 一般檔案模式｜來源位置不會暴露給網頁；可另選輸出資料夾或使用瀏覽器下載";
-  if(!canDirectWrite()){
+  const workspace=!!workspaceRootHandle,direct=canDirectWrite();
+  for(const opt of els.outputMode.options){
+    if(opt.value==="alongside")opt.disabled=!direct;
+    else if(opt.value==="workspace-results")opt.disabled=!workspace;
+    else if(opt.value==="custom")opt.disabled=!direct;
+  }
+  if(!direct&&["alongside","workspace-results","custom"].includes(els.outputMode.value))els.outputMode.value="zip";
+  if(els.outputMode.value==="workspace-results"&&!workspace)els.outputMode.value=direct?"alongside":"zip";
+  els.chooseOutput.hidden=els.outputMode.value!=="custom";
+  if(els.authorizeSource)els.authorizeSource.hidden=els.outputMode.value!=="alongside"||workspace;
+  els.preserveStructure.disabled=busy||els.outputMode.value==="alongside";
+  if(sourceMode==="workspace")els.sourceState.textContent=`📂 來源資料夾：${workspaceName}｜已取得讀寫權限，可直接存回原音檔旁邊`;
+  else if(sourceMode==="authorized-folder")els.sourceState.textContent=`📂 已授權來源資料夾：${workspaceName}｜目前 ${items.length} 個音檔已核對，可直接寫回原處`;
+  else if(sourceMode==="folder-input")els.sourceState.textContent=`📁 已匯入資料夾：${workspaceName}｜若要存回原處，直接選『與來源音檔放在同一資料夾』並授權同一資料夾`;
+  else els.sourceState.textContent="🎵 一般檔案模式｜若要存回原音檔旁邊，直接選『與來源音檔放在同一資料夾』，程式會引導授權來源資料夾";
+  if(!direct){
     els.openWorkspace.disabled=true;els.openWorkspace.title="此瀏覽器不支援直接讀寫資料夾；請使用『匯入資料夾』＋瀏覽器下載";
-    for(const opt of els.outputMode.options)if(opt.value==="custom")opt.disabled=true;
-    if(els.outputMode.value==="custom")els.outputMode.value="zip";
-  }else{for(const opt of els.outputMode.options)if(opt.value==="custom")opt.disabled=false}
+  }else els.openWorkspace.title="選擇來源音檔所在資料夾並取得讀寫權限";
   refreshOutputDestinationState();
   if(els.openOutputLocation)els.openOutputLocation.disabled=busy||analyzing||scanning||!hasLocatableOutput();
 }
@@ -990,7 +997,7 @@ function render(){
   renderOutputResults();updateButtons();
 }
 function updateButtons(){
-  els.convert.disabled=busy||analyzing||scanning||!items.some(x=>x.file.size<=fileSizeLimit(x.file)&&["ready","error","cancelled"].includes(x.status));els.clear.disabled=busy||analyzing||scanning;els.pickFiles.disabled=busy||analyzing||scanning;els.pickFolder.disabled=busy||analyzing||scanning;els.openWorkspace.disabled=busy||analyzing||scanning||!canDirectWrite();els.outputMode.disabled=busy||analyzing||scanning;els.chooseOutput.disabled=busy||analyzing||scanning;if(els.openOutputLocation)els.openOutputLocation.disabled=busy||analyzing||scanning||!hasLocatableOutput();els.restoreFolders.disabled=busy||analyzing||scanning;els.forgetFolders.disabled=busy||analyzing||scanning;els.mode.disabled=busy||analyzing;els.bitrate.disabled=busy||analyzing;els.skipMp3.disabled=busy||analyzing;els.preserveStructure.disabled=busy||analyzing||els.outputMode.value==="alongside";els.conflictPolicy.disabled=busy||analyzing;els.resumeMode.disabled=busy||analyzing;els.autoSave.disabled=busy||analyzing;
+  els.convert.disabled=busy||analyzing||scanning||!items.some(x=>x.file.size<=fileSizeLimit(x.file)&&["ready","error","cancelled"].includes(x.status));els.clear.disabled=busy||analyzing||scanning;els.pickFiles.disabled=busy||analyzing||scanning;els.pickFolder.disabled=busy||analyzing||scanning;els.openWorkspace.disabled=busy||analyzing||scanning||!canDirectWrite();els.outputMode.disabled=busy||analyzing||scanning;els.chooseOutput.disabled=busy||analyzing||scanning;if(els.authorizeSource)els.authorizeSource.disabled=busy||analyzing||scanning;if(els.openOutputLocation)els.openOutputLocation.disabled=busy||analyzing||scanning||!hasLocatableOutput();els.restoreFolders.disabled=busy||analyzing||scanning;els.forgetFolders.disabled=busy||analyzing||scanning;els.mode.disabled=busy||analyzing;els.bitrate.disabled=busy||analyzing;els.skipMp3.disabled=busy||analyzing;els.preserveStructure.disabled=busy||analyzing||els.outputMode.value==="alongside";els.conflictPolicy.disabled=busy||analyzing;els.resumeMode.disabled=busy||analyzing;els.autoSave.disabled=busy||analyzing;
   const locked=busy||analyzing||scanning,haveCached=items.some(x=>x.status==="done"&&x.outputStorage!=="direct");els.zip.disabled=locked||!haveCached;els.csv.disabled=locked||sessionRecords.length===0;els.json.disabled=locked||sessionRecords.length===0;els.clearRecovery.disabled=locked;
 }
 function updateCurrentCard(){if(!currentItem)return;const card=els.fileList.querySelector(`[data-id="${currentItem.id}"]`);if(!card)return;const bar=card.querySelector(".progress-bar"),state=card.querySelector(".file-state");if(bar)bar.style.width=`${currentItem.progress}%`;if(state)state.textContent=currentItem.message}
@@ -1017,6 +1024,41 @@ async function detectCustomOutputInsideWorkspace(){
   excludedCustomPath="";if(!workspaceRootHandle||!customOutputHandle||typeof workspaceRootHandle.resolve!=="function")return;
   try{const parts=await workspaceRootHandle.resolve(customOutputHandle);if(parts&&parts.length){excludedCustomPath=normalizeRelativePath(parts.join("/"));const before=items.length;items=items.filter(i=>!isPathInside(i.relativePath,excludedCustomPath));const removed=before-items.length;if(removed){scanIgnored+=removed;setStatus(`輸出資料夾位於來源內：已排除 ${excludedCustomPath}，並移除 ${removed} 個可能被重複掃描的檔案。`);updateScanSummary();render()}}}catch{}
 }
+async function resolveAuthorizedSource(root,item){
+  const rel=normalizeRelativePath(item.relativePath||item.file.name),parts=rel.split("/").filter(Boolean);
+  if(!parts.length)return null;
+  let dir=root;
+  try{
+    for(const part of parts.slice(0,-1))dir=await dir.getDirectoryHandle(part);
+    const fileHandle=await dir.getFileHandle(parts.at(-1)),candidate=await fileHandle.getFile();
+    let same=candidate.size===item.file.size&&candidate.lastModified===item.file.lastModified;
+    if(!same&&candidate.size===item.file.size){
+      try{const [a,b]=await Promise.all([ensureFingerprint(item),fileFingerprint(candidate)]);same=isStrongFingerprint(a)&&isStrongFingerprint(b)&&a===b}catch{}
+    }
+    return same?{dir,fileHandle}:null;
+  }catch{return null}
+}
+async function authorizeSameFolderForCurrentItems(){
+  if(!canDirectWrite()){setStatus("此瀏覽器不支援直接寫回來源資料夾，請改用自訂輸出或瀏覽器下載。");return false}
+  if(busy||analyzing||scanning)return false;
+  try{
+    const root=await window.showDirectoryPicker({mode:"readwrite",id:"cmp3-v1-source"});
+    if(!items.length){await putHandle("workspace",root).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;await scanWorkspaceHandle(root);return true}
+    setScanning(true);setStatus(`正在核對來源資料夾 ${root.name}… 0/${items.length}`);
+    const linked=[];
+    try{
+      for(let i=0;i<items.length;i++){
+        const found=await resolveAuthorizedSource(root,items[i]);
+        if(!found){setStatus(`來源資料夾核對未通過：${items[i].relativePath} 不在你選的資料夾內，或檔案內容已不同。未變更輸出權限。`);return false}
+        linked.push(found);if((i+1)%50===0||i+1===items.length){setStatus(`正在核對來源資料夾 ${root.name}… ${i+1}/${items.length}`);await sleep0()}
+      }
+    }finally{setScanning(false)}
+    for(let i=0;i<items.length;i++){items[i].sourceDirHandle=linked[i].dir;items[i].sourceKind="authorized-folder"}
+    workspaceRootHandle=root;workspaceName=sanitizeSegment(root.name,"來源資料夾");sourceMode="authorized-folder";excludedCustomPath="";els.outputMode.value="alongside";
+    await putHandle("workspace",root).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;
+    await detectCustomOutputInsideWorkspace();updateSourceCapabilities();render();setStatus(`✅ 已授權來源資料夾：${workspaceName}。${items.length} 個音檔均已核對，可直接存回原音檔旁邊。`);return true;
+  }catch(err){if(err?.name!=="AbortError")setStatus(`授權來源資料夾失敗：${err?.message||err}`);return false}
+}
 async function chooseCustomOutput(){if(!canDirectWrite()){setStatus("此瀏覽器不支援直接寫入資料夾，請改用 ZIP 相容模式。");return}try{const handle=await window.showDirectoryPicker({mode:"readwrite",id:"cmp3-v1-output"});customOutputHandle=handle;await putHandle("custom-output",handle).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;els.outputFolderState.textContent=`✅ 輸出資料夾：${handle.name}`;els.outputMode.value="custom";await detectCustomOutputInsideWorkspace();updateSourceCapabilities();setStatus(`已選擇輸出資料夾：${handle.name}`)}catch(err){if(err?.name!=="AbortError")setStatus(`選擇輸出資料夾失敗：${err?.message||err}`)}}
 async function outputBrowseHandle(){
   if(els.outputMode.value==="custom")return customOutputHandle;
@@ -1032,7 +1074,7 @@ async function openOutputLocation(){
   if(!canDirectWrite()){setStatus("目前瀏覽器無法開啟資料夾定位視窗。若使用瀏覽器下載模式，請從瀏覽器的下載清單查看檔案。");return}
   try{
     const startIn=await outputBrowseHandle();
-    if(!startIn){setStatus("目前沒有可定位的直接輸出資料夾；請先選擇輸出資料夾，或使用『開啟工作資料夾』後直接存回來源旁邊。");return}
+    if(!startIn){setStatus("目前沒有可定位的直接輸出資料夾；請先選擇輸出資料夾，或授權來源資料夾後直接存回原音檔旁邊。");return}
     const chosen=await window.showDirectoryPicker({mode:"read",startIn,id:"cmp3-v1-locate-output"});
     setStatus(`已開啟系統資料夾定位視窗：${chosen.name}。此操作只用來定位，不會變更目前的輸出設定。`);
   }catch(err){if(err?.name!=="AbortError")setStatus(`開啟輸出位置失敗：${err?.message||err}`)}
@@ -1078,7 +1120,7 @@ async function forceMp3SourceProtection(item,dir,name){
 async function planDirectTarget(item){
   let dir,relativeDir="";const preserve=els.preserveStructure.checked;
   if(els.outputMode.value==="workspace-results"){if(!workspaceRootHandle)throw new Error("尚未開啟可寫入的工作資料夾");relativeDir=joinPath(RESULT_FOLDER,preserve?dirname(item.relativePath):"");dir=await ensureDir(workspaceRootHandle,relativeDir)}
-  else if(els.outputMode.value==="alongside"){if(!item.sourceDirHandle)throw new Error("此來源未提供直接寫回權限；請改用『開啟工作資料夾』");dir=item.sourceDirHandle;relativeDir=dirname(item.relativePath)}
+  else if(els.outputMode.value==="alongside"){if(!item.sourceDirHandle)throw new Error("此來源尚未授權直接寫回；請重新選擇『與來源音檔放在同一資料夾』並授權來源資料夾");dir=item.sourceDirHandle;relativeDir=dirname(item.relativePath)}
   else if(els.outputMode.value==="custom"){if(!customOutputHandle)throw new Error("請先選擇輸出資料夾");relativeDir=preserve?dirname(item.relativePath):"";dir=await ensureDir(customOutputHandle,relativeDir)}else return null;
   let name=item.outputName||`${safeBase(item.file.name)}.mp3`;const original=name;name=await forceMp3SourceProtection(item,dir,name);let exists=await existingFile(dir,name);
   if(item.safetyRenamed||exists&&els.conflictPolicy.value==="rename"){const stem=safeBase(name);let candidate=name,n=2;while(await existingFile(dir,candidate)){candidate=`${stem}_${n++}.mp3`}name=candidate;exists=await existingFile(dir,name)}
@@ -1168,7 +1210,7 @@ async function convertOne(item,done,total,settings){
 }
 
 async function startConvert(){
-  if(busy||analyzing||scanning)return;if(els.outputMode.value==="custom"&&!customOutputHandle){await chooseCustomOutput();if(!customOutputHandle)return}
+  if(busy||analyzing||scanning)return;if(els.outputMode.value==="alongside"&&!workspaceRootHandle){const ok=await authorizeSameFolderForCurrentItems();if(!ok)return}if(els.outputMode.value==="custom"&&!customOutputHandle){await chooseCustomOutput();if(!customOutputHandle)return}
   let targets=items.filter(x=>x.file.size<=fileSizeLimit(x.file)&&["ready","error","cancelled"].includes(x.status));if(!targets.length){setStatus("沒有需要轉換的檔案。");return}
   cancelRequested=false;activeAbortController=new AbortController();analyzing=true;els.cancel.disabled=false;render();let settings;
   try{
@@ -1217,16 +1259,16 @@ function setupServiceWorker(){
   }).catch(()=>{els.offline.textContent="⚠️ Service Worker 無法註冊，離線模式未啟用"})
 }
 
-els.pickFiles.addEventListener("click",()=>els.fileInput.click());els.pickFolder.addEventListener("click",()=>els.folderInput.click());els.openWorkspace.addEventListener("click",openWorkspace);els.chooseOutput.addEventListener("click",chooseCustomOutput);els.openOutputLocation.addEventListener("click",openOutputLocation);els.restoreFolders.addEventListener("click",restoreFolders);els.forgetFolders.addEventListener("click",forgetSavedFolders);
+els.pickFiles.addEventListener("click",()=>els.fileInput.click());els.pickFolder.addEventListener("click",()=>els.folderInput.click());els.openWorkspace.addEventListener("click",openWorkspace);els.chooseOutput.addEventListener("click",chooseCustomOutput);els.authorizeSource?.addEventListener("click",authorizeSameFolderForCurrentItems);els.openOutputLocation.addEventListener("click",openOutputLocation);els.restoreFolders.addEventListener("click",restoreFolders);els.forgetFolders.addEventListener("click",forgetSavedFolders);
 els.fileInput.addEventListener("change",async e=>{await addFiles(e.target.files,{folderMode:false});e.target.value=""});els.folderInput.addEventListener("change",async e=>{await addFiles(e.target.files,{folderMode:true,replace:true});e.target.value=""});
 for(const ev of["dragenter","dragover"])els.dropZone.addEventListener(ev,e=>{e.preventDefault();els.dropZone.classList.add("dragover")});for(const ev of["dragleave","drop"])els.dropZone.addEventListener(ev,e=>{e.preventDefault();els.dropZone.classList.remove("dragover")});els.dropZone.addEventListener("drop",e=>void addFiles(e.dataTransfer.files,{folderMode:false}));els.dropZone.addEventListener("click",()=>els.fileInput.click());els.dropZone.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();els.fileInput.click()}});
-els.mode.addEventListener("change",()=>{renderMemoryPolicy();updateButtons();render()});els.bitrate.addEventListener("change",()=>{updateQualityHint();render()});els.outputMode.addEventListener("change",()=>{if(els.outputMode.value==="custom"&&!customOutputHandle)els.outputFolderState.textContent="請按下方按鈕選擇可寫入的輸出資料夾。";updateSourceCapabilities();render()});els.preserveStructure.addEventListener("change",()=>{refreshOutputDestinationState();render()});els.convert.addEventListener("click",startConvert);els.cancel.addEventListener("click",stopConvert);els.stopScan.addEventListener("click",stopScanning);els.clear.addEventListener("click",clearAll);els.zip.addEventListener("click",zipAll);els.csv.addEventListener("click",exportCsv);els.json.addEventListener("click",exportJson);els.clearRecovery.addEventListener("click",clearRecoveryCache);els.retryFailed?.addEventListener("click",retryFailedItems);els.cleanupSidecars?.addEventListener("click",cleanupSidecars);els.search.addEventListener("input",render);els.statusFilter.addEventListener("change",render);window.addEventListener("beforeunload",()=>items.forEach(releaseURLs));
+els.mode.addEventListener("change",()=>{renderMemoryPolicy();updateButtons();render()});els.bitrate.addEventListener("change",()=>{updateQualityHint();render()});els.outputMode.addEventListener("change",async()=>{if(els.outputMode.value==="custom"&&!customOutputHandle)els.outputFolderState.textContent="請按下方按鈕選擇可寫入的輸出資料夾。";updateSourceCapabilities();render();if(els.outputMode.value==="alongside"&&!workspaceRootHandle)await authorizeSameFolderForCurrentItems()});els.preserveStructure.addEventListener("change",()=>{refreshOutputDestinationState();render()});els.convert.addEventListener("click",startConvert);els.cancel.addEventListener("click",stopConvert);els.stopScan.addEventListener("click",stopScanning);els.clear.addEventListener("click",clearAll);els.zip.addEventListener("click",zipAll);els.csv.addEventListener("click",exportCsv);els.json.addEventListener("click",exportJson);els.clearRecovery.addEventListener("click",clearRecoveryCache);els.retryFailed?.addEventListener("click",retryFailedItems);els.cleanupSidecars?.addEventListener("click",cleanupSidecars);els.search.addEventListener("input",render);els.statusFilter.addEventListener("change",render);window.addEventListener("beforeunload",()=>items.forEach(releaseURLs));
 
 try{
   els.engine.textContent=`✅ CHOPPER Native MP3 Core v0.4.1｜${els.bitrate.value} kbps｜自適應 frame bit allocation｜純 JavaScript｜0 第三方套件`;
   updateQualityHint();updateSourceCapabilities();render();updateScanSummary();updateStorageState();setupServiceWorker();initRestorableHandles();
   window.__AUDIO_MP3_APP_READY__=true;
-  if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("audio-mp3-app-ready",{detail:{version:"1.0.3"}}));
+  if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("audio-mp3-app-ready",{detail:{version:"1.0.4"}}));
 }catch(err){
   const message=String(err?.message||err||"未知錯誤");
   window.__AUDIO_MP3_BOOT_ERROR__=message;

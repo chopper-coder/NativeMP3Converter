@@ -11,7 +11,7 @@
 </head>
 <body>
   <header class="hero"><div class="hero-inner">
-    <div class="brand-row"><div class="cat" aria-hidden="true">😺</div><div><p class="eyebrow">CHOPPER LOCAL TOOL</p><h1>音檔轉 MP3</h1><p class="subtitle">V1.0.3｜Picker ID Compatibility Hotfix</p></div></div>
+    <div class="brand-row"><div class="cat" aria-hidden="true">😺</div><div><p class="eyebrow">CHOPPER LOCAL TOOL</p><h1>音檔轉 MP3</h1><p class="subtitle">V1.0.4｜Same Folder Workflow UX Edition</p></div></div>
     <div class="privacy-badges" aria-label="隱私特性"><span>🔒 本機處理</span><span>🚫 零上傳</span><span>🌐 零 CDN</span><span>📁 資料夾批次</span><span>♻️ 中斷續作</span><span>🛡️ 原檔保護</span><span>📚 大量批次</span><span>🧠 Native Core v0.4.1</span><span>🌊 WAV 真串流</span><span>🛡️ PCM 防當機</span><span>📦 第三方套件 0</span></div>
   </div></header>
 
@@ -33,13 +33,14 @@
 
       <h2 class="subheading">輸出與資料夾</h2>
       <div class="field"><label for="outputMode">轉換後檔案存放位置</label><select id="outputMode">
-        <option value="alongside" disabled>與來源音檔放在同一資料夾（工作資料夾模式）</option>
+        <option value="alongside">與來源音檔放在同一資料夾（會引導授權）</option>
         <option value="custom" selected>自己選擇輸出資料夾</option>
         <option value="workspace-results" disabled>來源資料夾內建立「MP3_轉換結果」</option>
         <option value="zip">瀏覽器下載（單檔 MP3／多檔 ZIP，相容模式）</option>
       </select></div>
       <div class="output-folder-actions">
         <button id="chooseOutputBtn" class="btn ghost" type="button">📁 選擇輸出資料夾</button>
+        <button id="authorizeSourceBtn" class="btn primary" type="button" hidden>📂 授權來源資料夾</button>
         <button id="openOutputLocationBtn" class="btn secondary" type="button" disabled>📂 開啟轉換後檔案位置</button>
       </div>
       <div id="outputFolderState" class="output-destination-state">尚未選擇輸出位置。</div>
@@ -51,18 +52,18 @@
       <div class="field inline-check"><input id="resumeMode" type="checkbox" checked><label for="resumeMode">接續模式：來源未變更且已有完成紀錄時自動跳過</label></div>
       <div class="field inline-check"><input id="autoSave" type="checkbox" checked><label for="autoSave">完成後自動輸出：資料夾模式每檔立即寫入；相容模式單檔直接下載、多檔在安全容量內自動下載 ZIP</label></div>
 
-      <div class="info-card"><strong>資料夾模式說明</strong><p>若要讓 MP3 自動存回原音檔旁邊，請使用「📂 開啟工作資料夾」取得資料夾讀寫權限，之後選擇「與來源音檔放在同一資料夾」。一般「選擇音檔／匯入資料夾」受瀏覽器安全限制，只能讀取來源，無法得知並直接寫回原資料夾；此時可自己選擇輸出資料夾或使用瀏覽器下載。</p></div>
+      <div class="info-card"><strong>資料夾模式說明</strong><p>要把 MP3 存回原音檔旁邊，直接選「與來源音檔放在同一資料夾」即可。若你先用「選擇音檔／匯入資料夾」，程式會自動跳出來源資料夾授權視窗，並核對目前清單中的檔名、大小與修改時間（必要時再比對檔案指紋）；全部核對通過才會取得寫回權限。也可以直接按「📂 選擇來源音檔資料夾」一次完成授權與掃描。</p></div>
       <div class="info-card soft"><strong>Native Core v0.4.1｜Streaming</strong><p>相容的 PCM／Float WAV（32、44.1、48 kHz；Mono／Stereo）採兩階段低記憶體串流：先分塊掃描峰值，再逐塊 PCM → MP3 frame。直接資料夾輸出會先寫入專用 .part 暫存，MP3 全檔 frame 驗證通過後才提交正式檔名。其他壓縮格式仍使用瀏覽器 Web Audio 完整解碼，因此仍受記憶體門檻保護。自行實作音質與成熟 LAME / FFmpeg 不完全相同。</p></div>
       <details class="details"><summary>Native Encoder、記憶體、離線與紀錄</summary><div id="engineState" class="engine-state">✅ CHOPPER Native MP3 Core v0.4.1｜WAV Streaming｜純 JavaScript｜0 第三方套件</div><div id="memoryPolicyState" class="engine-state">⏳ 正在計算目前裝置的 PCM 安全門檻…</div><div id="offlineState" class="engine-state">⏳ 正在檢查離線程式快取…</div><button id="updateAppBtn" class="mini" type="button" hidden>🆕 立即更新程式</button><div id="storageState" class="engine-state">⏳ 正在檢查瀏覽器暫存空間…</div><pre id="log" class="log" aria-live="polite"></pre></details>
     </section>
 
     <section class="panel workspace" aria-labelledby="filesTitle">
-      <div class="section-head"><div><h2 id="filesTitle">音檔工作區</h2><p id="sourceState">可選單檔、整個資料夾，或開啟可直接讀寫的工作資料夾。</p></div><button id="clearBtn" class="btn ghost" type="button">清空</button></div>
+      <div class="section-head"><div><h2 id="filesTitle">音檔工作區</h2><p id="sourceState">可選單檔、整個資料夾；要直接存回原處時，程式會引導授權來源資料夾。</p></div><button id="clearBtn" class="btn ghost" type="button">清空</button></div>
 
       <div class="source-actions">
         <button id="pickFilesBtn" class="btn secondary" type="button">🎵 選擇音檔</button>
         <button id="pickFolderBtn" class="btn secondary" type="button">📁 匯入資料夾</button>
-        <button id="openWorkspaceBtn" class="btn primary" type="button">📂 開啟工作資料夾</button>
+        <button id="openWorkspaceBtn" class="btn primary" type="button">📂 選擇來源音檔資料夾</button>
       </div>
       <input id="fileInput" class="hidden-input" type="file" multiple accept="audio/*,.m4a,.aac,.wav,.flac,.ogg,.oga,.opus,.webm,.mp3,.aif,.aiff,.amr">
       <input id="folderInput" class="hidden-input" type="file" multiple webkitdirectory directory accept="audio/*,.m4a,.aac,.wav,.flac,.ogg,.oga,.opus,.webm,.mp3,.aif,.aiff,.amr">

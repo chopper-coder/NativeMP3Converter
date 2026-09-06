@@ -79,3 +79,8 @@ compressed / unsupported WAV
 ## V1.0.3 Classic Bundle Runtime
 
 GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build_classic_bundle.py` 從可讀的模組原始碼產生，並內嵌 Native MP3 Worker source。正式頁面不再依賴 ES Module import graph；原本的 `js/*.js` 模組保留供原始碼審閱與回歸測試。
+
+
+## V1.0.4 Same Folder Workflow
+
+同資料夾輸出改為顯式來源資料夾授權流程。一般 File / webkitdirectory 匯入不會被視為可寫入權限；使用者選擇 alongside 後，由 `showDirectoryPicker()` 取得 readwrite Handle，逐筆核對目前來源，再把 `sourceDirHandle` 綁定到已驗證項目。全部核對成功前不會啟用直接寫回。

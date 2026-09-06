@@ -24,7 +24,7 @@ await import("../js/app.js");
 await map.get("openWorkspaceBtn").click();
 assert.equal(map.get("outputMode").value,"alongside","workspace should default to same-source output");
 assert.equal(map.get("openOutputLocationBtn").disabled,false,"output-location button should enable for workspace direct output");
-assert.match(map.get("outputFolderState").textContent,/直接存回各來源音檔所在資料夾/);
+assert.match(map.get("outputFolderState").textContent,/直接存回來源音檔所在資料夾/);
 await map.get("openOutputLocationBtn").click();
 assert.equal(pickerCalls.length,2);
 assert.equal(pickerCalls[1].startIn,root,"location picker should start in current output workspace");

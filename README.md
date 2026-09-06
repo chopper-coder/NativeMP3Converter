@@ -1,4 +1,4 @@
-# 音檔轉 MP3 V1.0.3｜Picker ID Compatibility Hotfix
+# 音檔轉 MP3 V1.0.4｜Same Folder Workflow UX Edition
 
 這是一個重新建立的乾淨專案。專案名稱建議使用 **NativeMP3Converter**，不要覆蓋舊的 `AudioToMP3` Repository。
 
@@ -65,6 +65,8 @@ node scripts/output_ttl_test.mjs
 node scripts/dom_boot_test.mjs
 node scripts/classic_bundle_boot_test.mjs
 node scripts/output_folder_workflow_test.mjs
+node scripts/same_folder_workflow_test.mjs
+node scripts/picker_id_limit_test.mjs
 node scripts/external_codec_test.mjs
 ```
 
@@ -80,3 +82,10 @@ V1.0.3 不再讓 GitHub Pages 逐支解析 ES Module 相依鏈。正式頁面改
 ## V1.0.3 File System Access Picker ID 修正
 
 Chromium 的 File System Access picker `id` 最長 32 字元。V1.0.2 的「定位單一輸出」與「開啟輸出位置」使用過長 id，會直接拋出 `showDirectoryPicker ... ID cannot be longer than 32 characters`。V1.0.3 將全部 picker id 統一縮短為 `cmp3-v1-*`，並加入自動回歸測試，確保未來所有 picker id 都不超過 32 字元。
+
+
+## V1.0.4 Same Folder Workflow UX
+
+「與來源音檔放在同一資料夾」現在可以直接選擇，不再要求使用者事前知道什麼是工作資料夾。若目前音檔是透過「選擇音檔」或傳統「匯入資料夾」加入，選取同資料夾輸出時會立即開啟來源資料夾授權。程式會逐筆核對相對路徑、檔名、大小與修改時間；必要時再以檔案指紋比對。只有全部來源都能在使用者授權的資料夾內核對成功，才會把直接寫回權限套用到目前清單。
+
+若目前清單尚未有音檔，選取同資料夾輸出後選擇資料夾，會直接以該資料夾作為來源並掃描。另保留「📂 選擇來源音檔資料夾」按鈕，供想一次完成授權與掃描的使用者使用。
