@@ -1,7 +1,7 @@
 {
   "name": "native-mp3-converter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "private": true,
-  "description": "Direct-module-boot zero-dependency browser-local MP3 converter with CHOPPER Native MP3 Core v0.4.1, streaming WAV encoding, safe folder output, recovery and strict security regression checks"
+  "description": "Classic-bundle zero-dependency browser-local MP3 converter with CHOPPER Native MP3 Core v0.4.1, embedded Blob Worker, streaming WAV encoding, safe folder output and recovery"
 }

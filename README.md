@@ -1,4 +1,4 @@
-# 音檔轉 MP3 V1.0.1｜Direct Module Boot Hotfix
+# 音檔轉 MP3 V1.0.2｜Classic Bundle Boot Hotfix
 
 這是一個重新建立的乾淨專案。專案名稱建議使用 **NativeMP3Converter**，不要覆蓋舊的 `AudioToMP3` Repository。
 
@@ -63,7 +63,7 @@ node scripts/self_test.mjs
 node scripts/adversarial_test.mjs
 node scripts/output_ttl_test.mjs
 node scripts/dom_boot_test.mjs
-node scripts/direct_module_boot_test.mjs
+node scripts/classic_bundle_boot_test.mjs
 node scripts/output_folder_workflow_test.mjs
 node scripts/external_codec_test.mjs
 ```
@@ -71,6 +71,8 @@ node scripts/external_codec_test.mjs
 `external_codec_test.mjs` 只在測試環境有 FFmpeg 時，把它當獨立 decoder 驗證 MP3；正式網站不載入 FFmpeg。
 
 
-## V1.0.1 啟動修正
+## V1.0.2 啟動修正
 
-GitHub Pages 直接使用 `<script type="module" src="./js/app.js"></script>` 啟動，不再經過 bootstrap.js 的 dynamic import 與 query-string。Service Worker 對白名單資產採 network-first、cache fallback，降低舊快取卡住新版模組的風險。
+V1.0.2 不再讓 GitHub Pages 逐支解析 ES Module 相依鏈。正式頁面改用 `<script defer src="./js/app.bundle.js"></script>`，主程式、解碼、安全輸出、Recovery、WAV streaming 與 Native MP3 encoder 依賴都打包進單一 Classic JavaScript runtime。MP3 Worker 也以本機 Blob Worker 內嵌，不需要另外載入 `encoder-worker.js` 或其 module graph。
+
+因此網站真正運作只依賴 `index.html`、`css/style.css`、`js/boot-check.js`、`js/app.bundle.js` 與 `sw.js`。其餘 `js/*.js` 為可讀原始碼與回歸測試來源，即使某支 source module 沒有被 Service Worker 快取，也不會讓首頁按鈕失效。

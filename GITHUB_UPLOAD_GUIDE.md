@@ -1,4 +1,4 @@
-# GitHub 上傳教學 — Fresh Repository V1.0
+# GitHub 上傳教學 — NativeMP3Converter V1.0.2
 
 ## 建議：建立全新的 Repository
 
@@ -35,3 +35,17 @@ https://你的帳號.github.io/NativeMP3Converter/
 ```
 
 新專案使用新的 Service Worker cache / IndexedDB namespace，不會讀取舊 `AudioToMP3` 的續作資料。
+
+### V1.0.2 必看
+
+網站啟動已改成單一 `js/app.bundle.js`，不再依賴十幾支 ES Module 同時載入。請確認 Repository 根目錄至少有：
+
+```text
+index.html
+css/style.css
+js/app.bundle.js
+js/boot-check.js
+sw.js
+```
+
+若這 5 個 Runtime 檔案完整，選擇音檔與資料夾按鈕就能初始化；其餘 `js/*.js` 是原始碼與測試來源。

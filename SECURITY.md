@@ -1,4 +1,4 @@
-# Security & Privacy — NativeMP3Converter V1.0
+# Security & Privacy — NativeMP3Converter V1.0.2
 
 ## 隱私邊界
 
@@ -33,7 +33,7 @@
 - UI 不使用 `eval`、`new Function`、`innerHTML=`、`document.write` 或 inline event handler。
 - CSV 防 spreadsheet formula injection。
 - ZIP 阻擋 path traversal、重複路徑與 ZIP32 overflow。
-- CSP 將 script / worker / connect 限制為同源。
+- CSP 將 script / connect 限制為同源；`worker-src` 只額外允許 `blob:`，用於內嵌的本機 Native MP3 Worker。
 
 ## 資源耗盡防護
 
@@ -41,4 +41,4 @@
 - 非串流來源先做 PCM working-set 估算。
 - 大型 WAV 僅在相容 streaming path 下處理；不相容大型檔案不會強行完整 decode。
 
-詳見 `SECURITY_AUDIT_V1.0.md`。
+詳見 `SECURITY_AUDIT_V1.0.md` 與 `SECURITY_AUDIT_V1.0.2.md`。
