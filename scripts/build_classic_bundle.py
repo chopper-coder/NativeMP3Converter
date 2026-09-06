@@ -121,7 +121,6 @@ def transform_app(text: str) -> str:
     if old_cleanup not in text:
         raise RuntimeError('Worker cleanup pattern not found; refusing to build stale bundle')
     text=text.replace(old_cleanup,new_cleanup)
-    text=text.replace('version:"1.0.1"','version:"1.0.2"')
     return text
 
 worker=build_worker()

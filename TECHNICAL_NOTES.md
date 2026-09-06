@@ -76,6 +76,6 @@ compressed / unsupported WAV
 串流先產生 `.part`。驗證後提交正式檔；若正式檔原本存在，提交前另存本站 backup sidecar。若正式寫入失敗，程式嘗試用 backup 回復舊檔；若回復本身也失敗，錯誤訊息會保留 backup 名稱供人工處理。
 
 
-## V1.0.2 Classic Bundle Runtime
+## V1.0.3 Classic Bundle Runtime
 
 GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build_classic_bundle.py` 從可讀的模組原始碼產生，並內嵌 Native MP3 Worker source。正式頁面不再依賴 ES Module import graph；原本的 `js/*.js` 模組保留供原始碼審閱與回歸測試。

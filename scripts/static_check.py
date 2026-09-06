@@ -13,7 +13,7 @@ for p in runtime:
 for p in root.rglob('*'):
     if p.is_file() and (p.suffix.lower()=='.wasm' or 'ffmpeg-core' in p.name.lower()): print('FAIL forbidden runtime binary:',p);sys.exit(1)
 index=(root/'index.html').read_text('utf-8')
-for token in ['V1.0.2｜Classic Bundle Boot Hotfix','id="folderInput"','id="openWorkspaceBtn"','id="outputMode"','id="openOutputLocationBtn"','id="forgetFoldersBtn"','id="resumeMode"','id="autoSave"','id="bitrate"','id="searchInput"','id="stopScanBtn"','id="retryFailedBtn"','id="cleanupSidecarsBtn"','id="outputResultsPanel"','id="memoryPolicyState"','第三方套件 0','Content-Security-Policy',"frame-src 'none'","script-src 'self'","worker-src 'self' blob:","object-src 'none'",'name="referrer" content="no-referrer"','<script defer src="./js/app.bundle.js"></script>']:
+for token in ['V1.0.3｜Picker ID Compatibility Hotfix','id="folderInput"','id="openWorkspaceBtn"','id="outputMode"','id="openOutputLocationBtn"','id="forgetFoldersBtn"','id="resumeMode"','id="autoSave"','id="bitrate"','id="searchInput"','id="stopScanBtn"','id="retryFailedBtn"','id="cleanupSidecarsBtn"','id="outputResultsPanel"','id="memoryPolicyState"','第三方套件 0','Content-Security-Policy',"frame-src 'none'","script-src 'self'","worker-src 'self' blob:","object-src 'none'",'name="referrer" content="no-referrer"','<script defer src="./js/app.bundle.js"></script>']:
     if token not in index: print('FAIL index marker missing:',token);sys.exit(1)
 if '<script type="module"' in index or 'src="./js/app.js"' in index: print('FAIL runtime still uses ES Module app boot');sys.exit(1)
 if "'unsafe-inline'" in index or "'unsafe-eval'" in index: print('FAIL weak CSP');sys.exit(1)
@@ -39,11 +39,11 @@ enc=(root/'js/mp3/native-mp3-encoder.js').read_text('utf-8')
 for token in ['StreamingMp3Encoder','coreVersion:"0.4.1"','sampleRates:[32000,44100,48000]','encodeMp3']:
     if token not in enc: print('FAIL encoder marker missing:',token);sys.exit(1)
 sw=(root/'sw.js').read_text('utf-8')
-for token in ['chopper-native-mp3-v1-cache-3-classic-bundle','CACHE_PREFIX','k.startsWith(CACHE_PREFIX)','cache:"reload"','ASSET_URLS','!ASSET_URLS.has(url.href)','ACTIVATE_UPDATE','e.request.mode==="navigate"','cache:"no-store"','./js/app.bundle.js']:
+for token in ['chopper-native-mp3-v1-cache-4-picker-id-hotfix','CACHE_PREFIX','k.startsWith(CACHE_PREFIX)','cache:"reload"','ASSET_URLS','!ASSET_URLS.has(url.href)','ACTIVATE_UPDATE','e.request.mode==="navigate"','cache:"no-store"','./js/app.bundle.js']:
     if token not in sw: print('FAIL service worker marker missing:',token);sys.exit(1)
 if any(x in sw for x in ['native-audio-decoder.js','encoder-worker.js','analysis-window.js']): print('FAIL Service Worker still requires source module graph');sys.exit(1)
 pkg=json.loads((root/'package.json').read_text('utf-8'))
-if pkg.get('version')!='1.0.2': print('FAIL package version');sys.exit(1)
+if pkg.get('version')!='1.0.3': print('FAIL package version');sys.exit(1)
 if pkg.get('dependencies') or pkg.get('devDependencies'): print('FAIL npm dependencies present');sys.exit(1)
 print('PASS runtime remote URL = 0')
 print('PASS dangerous DOM/code sinks = 0')
@@ -52,4 +52,4 @@ print('PASS no FFmpeg/WASM runtime assets')
 print('PASS single classic runtime bundle / no ES-module boot graph')
 print('PASS Service Worker minimal runtime allow-list')
 print('PASS zero npm dependencies')
-print('PASS NativeMP3Converter V1.0.2 classic-bundle / fresh namespace / TTL / output markers')
+print('PASS NativeMP3Converter V1.0.3 classic-bundle / picker-ID / TTL / output markers')

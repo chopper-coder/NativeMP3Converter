@@ -1,4 +1,4 @@
-# Security & Privacy — NativeMP3Converter V1.0.2
+# Security & Privacy — NativeMP3Converter V1.0.3
 
 ## 隱私邊界
 
@@ -10,11 +10,11 @@
 
 為避免同一 `github.io` origin 下的舊專案狀態干擾，本專案使用全新 namespace：
 
-- CacheStorage：`chopper-native-mp3-v1-*`
+- CacheStorage：`cmp3-v1-*`（所有 picker id 均 ≤ 32 字元）
 - Output IndexedDB：`chopper-native-mp3-v1-output`
 - Recovery IndexedDB：`chopper-native-mp3-v1-recovery`
 - Handle IndexedDB：`chopper-native-mp3-v1-handles`
-- File System Access picker id：`chopper-native-mp3-v1-*`
+- File System Access picker id：`cmp3-v1-*`（所有 picker id 均 ≤ 32 字元）
 
 本專案不會主動刪除 `audio-to-mp3-*` 舊專案 cache。
 
@@ -41,4 +41,4 @@
 - 非串流來源先做 PCM working-set 估算。
 - 大型 WAV 僅在相容 streaming path 下處理；不相容大型檔案不會強行完整 decode。
 
-詳見 `SECURITY_AUDIT_V1.0.md` 與 `SECURITY_AUDIT_V1.0.2.md`。
+詳見 `SECURITY_AUDIT_V1.0.md` 與 `SECURITY_AUDIT_V1.0.3.md`。

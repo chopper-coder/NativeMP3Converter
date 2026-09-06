@@ -18,7 +18,7 @@ const document={querySelector(sel){return sel.startsWith("#")?map.get(sel.slice(
 const root={name:"來源錄音",kind:"directory",async *entries(){},async queryPermission(){return"granted"},async requestPermission(){return"granted"},async resolve(){return null}};
 const located={name:"來源錄音",kind:"directory"};
 const pickerCalls=[];
-const windowObj={document,isSecureContext:true,addEventListener(){},removeEventListener(){},async showDirectoryPicker(opts){pickerCalls.push(opts);return pickerCalls.length===1?root:located}};
+const windowObj={document,isSecureContext:true,addEventListener(){},removeEventListener(){},async showDirectoryPicker(opts){assert.ok(typeof opts?.id==="string"&&opts.id.length<=32,`picker id must be <=32 chars: ${opts?.id}`);pickerCalls.push(opts);return pickerCalls.length===1?root:located}};
 Object.defineProperty(globalThis,"document",{value:document,configurable:true});Object.defineProperty(globalThis,"window",{value:windowObj,configurable:true});Object.defineProperty(globalThis,"navigator",{value:{userAgent:"Node folder workflow",deviceMemory:8},configurable:true});Object.defineProperty(globalThis,"location",{value:{protocol:"http:"},configurable:true});globalThis.matchMedia=()=>({matches:false});globalThis.Audio=class{};
 await import("../js/app.js");
 await map.get("openWorkspaceBtn").click();

@@ -21,6 +21,6 @@
 - `scripts/*`：語法、資安、Codec、DOM、TTL、輸出流程與 adversarial regression。
 
 
-## V1.0.2 Classic Bundle Runtime
+## V1.0.3 Classic Bundle Runtime
 
 GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build_classic_bundle.py` 從可讀的模組原始碼產生，並內嵌 Native MP3 Worker source。正式頁面不再依賴 ES Module import graph；原本的 `js/*.js` 模組保留供原始碼審閱與回歸測試。

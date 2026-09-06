@@ -166,7 +166,7 @@ async function locateItemOutput(item){
   if(!canDirectWrite()){setStatus("目前瀏覽器無法定位資料夾；請從瀏覽器下載清單查看檔案。");return}
   const startIn=item.outputStorage==="direct"?(item.outputDirHandle||item.sourceDirHandle||await outputBrowseHandle()):null;
   if(!startIn){setStatus("此檔案不是直接資料夾輸出，沒有可定位的系統資料夾。");return}
-  try{const chosen=await window.showDirectoryPicker({mode:"read",startIn,id:"chopper-native-mp3-v1-locate-item"});setStatus(`已開啟 ${item.outputName||item.file.name} 的輸出位置定位視窗：${chosen.name}`)}catch(err){if(err?.name!=="AbortError")setStatus(`定位輸出位置失敗：${err?.message||err}`)}
+  try{const chosen=await window.showDirectoryPicker({mode:"read",startIn,id:"cmp3-v1-locate-item"});setStatus(`已開啟 ${item.outputName||item.file.name} 的輸出位置定位視窗：${chosen.name}`)}catch(err){if(err?.name!=="AbortError")setStatus(`定位輸出位置失敗：${err?.message||err}`)}
 }
 function renderOutputResults(){
   if(!els.outputResultsPanel)return;const rows=outputResultItems(),ok=rows.filter(x=>x.status==="done").length,skip=rows.filter(x=>x.status==="skipped").length,fail=rows.filter(x=>x.status==="error"||x.status==="cancelled").length;
@@ -234,7 +234,7 @@ async function detectCustomOutputInsideWorkspace(){
   excludedCustomPath="";if(!workspaceRootHandle||!customOutputHandle||typeof workspaceRootHandle.resolve!=="function")return;
   try{const parts=await workspaceRootHandle.resolve(customOutputHandle);if(parts&&parts.length){excludedCustomPath=normalizeRelativePath(parts.join("/"));const before=items.length;items=items.filter(i=>!isPathInside(i.relativePath,excludedCustomPath));const removed=before-items.length;if(removed){scanIgnored+=removed;setStatus(`輸出資料夾位於來源內：已排除 ${excludedCustomPath}，並移除 ${removed} 個可能被重複掃描的檔案。`);updateScanSummary();render()}}}catch{}
 }
-async function chooseCustomOutput(){if(!canDirectWrite()){setStatus("此瀏覽器不支援直接寫入資料夾，請改用 ZIP 相容模式。");return}try{const handle=await window.showDirectoryPicker({mode:"readwrite",id:"chopper-native-mp3-v1-output"});customOutputHandle=handle;await putHandle("custom-output",handle).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;els.outputFolderState.textContent=`✅ 輸出資料夾：${handle.name}`;els.outputMode.value="custom";await detectCustomOutputInsideWorkspace();updateSourceCapabilities();setStatus(`已選擇輸出資料夾：${handle.name}`)}catch(err){if(err?.name!=="AbortError")setStatus(`選擇輸出資料夾失敗：${err?.message||err}`)}}
+async function chooseCustomOutput(){if(!canDirectWrite()){setStatus("此瀏覽器不支援直接寫入資料夾，請改用 ZIP 相容模式。");return}try{const handle=await window.showDirectoryPicker({mode:"readwrite",id:"cmp3-v1-output"});customOutputHandle=handle;await putHandle("custom-output",handle).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;els.outputFolderState.textContent=`✅ 輸出資料夾：${handle.name}`;els.outputMode.value="custom";await detectCustomOutputInsideWorkspace();updateSourceCapabilities();setStatus(`已選擇輸出資料夾：${handle.name}`)}catch(err){if(err?.name!=="AbortError")setStatus(`選擇輸出資料夾失敗：${err?.message||err}`)}}
 async function outputBrowseHandle(){
   if(els.outputMode.value==="custom")return customOutputHandle;
   if(els.outputMode.value==="workspace-results"&&workspaceRootHandle){try{return await workspaceRootHandle.getDirectoryHandle(RESULT_FOLDER)}catch{return workspaceRootHandle}}
@@ -250,7 +250,7 @@ async function openOutputLocation(){
   try{
     const startIn=await outputBrowseHandle();
     if(!startIn){setStatus("目前沒有可定位的直接輸出資料夾；請先選擇輸出資料夾，或使用『開啟工作資料夾』後直接存回來源旁邊。");return}
-    const chosen=await window.showDirectoryPicker({mode:"read",startIn,id:"chopper-native-mp3-v1-locate-output"});
+    const chosen=await window.showDirectoryPicker({mode:"read",startIn,id:"cmp3-v1-locate-output"});
     setStatus(`已開啟系統資料夾定位視窗：${chosen.name}。此操作只用來定位，不會變更目前的輸出設定。`);
   }catch(err){if(err?.name!=="AbortError")setStatus(`開啟輸出位置失敗：${err?.message||err}`)}
 }
@@ -260,7 +260,7 @@ async function scanWorkspaceHandle(root,{restored=false}={}){
   scanCancelRequested=false;setScanning(true);setStatus(`${restored?"正在恢復並掃描":"正在掃描"} ${workspaceName}…`);const stats={supported:0,ignored:0,mp3:0,limitReached:false};
   try{await walkWorkspace(root,"",stats);scanIgnored=stats.ignored;scanMp3=stats.mp3;updateSourceCapabilities();updateScanSummary();render();setStatus(scanCancelRequested?`掃描已停止：目前保留 ${stats.supported} 個已找到檔案。`:stats.limitReached?`已達安全上限 ${MAX_FILES} 個檔案，已停止繼續掃描，避免瀏覽器資源耗盡。`:`工作資料夾掃描完成：${stats.supported} 個可處理檔案，${stats.ignored} 個已略過。`)}finally{setScanning(false)}
 }
-async function openWorkspace(){if(!canDirectWrite()){setStatus("目前瀏覽器不支援可直接讀寫的工作資料夾；請使用『匯入資料夾』。");return}if(busy||scanning)return;try{const root=await window.showDirectoryPicker({mode:"readwrite",id:"chopper-native-mp3-v1-workspace"});await putHandle("workspace",root).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;await scanWorkspaceHandle(root)}catch(err){if(err?.name!=="AbortError"){appendLog(String(err?.stack||err));setStatus(`開啟工作資料夾失敗：${err?.message||err}`)}}}
+async function openWorkspace(){if(!canDirectWrite()){setStatus("目前瀏覽器不支援可直接讀寫的工作資料夾；請使用『匯入資料夾』。");return}if(busy||scanning)return;try{const root=await window.showDirectoryPicker({mode:"readwrite",id:"cmp3-v1-workspace"});await putHandle("workspace",root).catch(()=>{});els.restoreFolders.hidden=false;els.forgetFolders.hidden=false;await scanWorkspaceHandle(root)}catch(err){if(err?.name!=="AbortError"){appendLog(String(err?.stack||err));setStatus(`開啟工作資料夾失敗：${err?.message||err}`)}}}
 async function walkWorkspace(dir,prefix,stats){
   if(stats.limitReached||items.length>=MAX_FILES){stats.limitReached=true;return}
   for await(const [name,handle] of dir.entries()){
@@ -443,7 +443,7 @@ try{
   els.engine.textContent=`✅ CHOPPER Native MP3 Core v0.4.1｜${els.bitrate.value} kbps｜自適應 frame bit allocation｜純 JavaScript｜0 第三方套件`;
   updateQualityHint();updateSourceCapabilities();render();updateScanSummary();updateStorageState();setupServiceWorker();initRestorableHandles();
   window.__AUDIO_MP3_APP_READY__=true;
-  if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("audio-mp3-app-ready",{detail:{version:"1.0.2"}}));
+  if(typeof window.dispatchEvent==="function"&&typeof CustomEvent==="function")window.dispatchEvent(new CustomEvent("audio-mp3-app-ready",{detail:{version:"1.0.3"}}));
 }catch(err){
   const message=String(err?.message||err||"未知錯誤");
   window.__AUDIO_MP3_BOOT_ERROR__=message;

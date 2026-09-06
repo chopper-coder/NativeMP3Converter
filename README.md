@@ -1,4 +1,4 @@
-# 音檔轉 MP3 V1.0.2｜Classic Bundle Boot Hotfix
+# 音檔轉 MP3 V1.0.3｜Picker ID Compatibility Hotfix
 
 這是一個重新建立的乾淨專案。專案名稱建議使用 **NativeMP3Converter**，不要覆蓋舊的 `AudioToMP3` Repository。
 
@@ -71,8 +71,12 @@ node scripts/external_codec_test.mjs
 `external_codec_test.mjs` 只在測試環境有 FFmpeg 時，把它當獨立 decoder 驗證 MP3；正式網站不載入 FFmpeg。
 
 
-## V1.0.2 啟動修正
+## V1.0.3 啟動修正
 
-V1.0.2 不再讓 GitHub Pages 逐支解析 ES Module 相依鏈。正式頁面改用 `<script defer src="./js/app.bundle.js"></script>`，主程式、解碼、安全輸出、Recovery、WAV streaming 與 Native MP3 encoder 依賴都打包進單一 Classic JavaScript runtime。MP3 Worker 也以本機 Blob Worker 內嵌，不需要另外載入 `encoder-worker.js` 或其 module graph。
+V1.0.3 不再讓 GitHub Pages 逐支解析 ES Module 相依鏈。正式頁面改用 `<script defer src="./js/app.bundle.js"></script>`，主程式、解碼、安全輸出、Recovery、WAV streaming 與 Native MP3 encoder 依賴都打包進單一 Classic JavaScript runtime。MP3 Worker 也以本機 Blob Worker 內嵌，不需要另外載入 `encoder-worker.js` 或其 module graph。
 
 因此網站真正運作只依賴 `index.html`、`css/style.css`、`js/boot-check.js`、`js/app.bundle.js` 與 `sw.js`。其餘 `js/*.js` 為可讀原始碼與回歸測試來源，即使某支 source module 沒有被 Service Worker 快取，也不會讓首頁按鈕失效。
+
+## V1.0.3 File System Access Picker ID 修正
+
+Chromium 的 File System Access picker `id` 最長 32 字元。V1.0.2 的「定位單一輸出」與「開啟輸出位置」使用過長 id，會直接拋出 `showDirectoryPicker ... ID cannot be longer than 32 characters`。V1.0.3 將全部 picker id 統一縮短為 `cmp3-v1-*`，並加入自動回歸測試，確保未來所有 picker id 都不超過 32 字元。

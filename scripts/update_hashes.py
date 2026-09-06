@@ -32,7 +32,7 @@ for p in sorted(files, key=relpath):
     lines.append(f"{digest}  {relpath(p)}")
 
 header = [
-    '# SHA-256 source manifest — NativeMP3Converter V1.0.2',
+    '# SHA-256 source manifest — NativeMP3Converter V1.0.3',
     '# GitHub web-upload metadata intentionally excluded: .gitignore, .nojekyll, .github/**',
     '# Runtime/source files remain hash-enforced.',
 ]
