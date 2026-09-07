@@ -91,3 +91,13 @@ GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build
 WAV parser 會解析 `fmt ` 的實際 format tag，而不是只看 `.wav` 副檔名。G.711 A-law / μ-law 以 JavaScript 逐 sample 解碼；WAVE_FORMAT_EXTENSIBLE 會驗證標準 SubFormat GUID，只接受 PCM / IEEE Float。低取樣率語音在串流中以連續狀態線性 interpolation 重採樣至 32 kHz，避免把整份 PCM 留在記憶體。
 
 目前明確不宣稱支援 Microsoft ADPCM (format 2) 與 IMA ADPCM (format 17)。遇到時 parser 會回報 codec 名稱，讓後續可針對實際來源再擴充。
+
+## V1.0.6 GSM 6.10 / Microsoft WAV format 49
+
+- WAVE format tag: `0x0031` (decimal 49), `WAVE_FORMAT_GSM610`.
+- Microsoft WAV packing: 65 bytes = 520 bits = two 260-bit GSM speech frames; frame B begins at bit 260 (byte 32 bit 4).
+- Field packing is LSB-first for the Microsoft WAV variant.
+- Decoder stages: LAR decode/interpolation → APCM inverse + RPE grid → long-term synthesis → short-term lattice synthesis → de-emphasis → output truncation.
+- Persistent decoder state is kept across blocks for LTP history, LAR interpolation, short-term synthesis memory and de-emphasis.
+- 8 kHz mono PCM is streamed into the existing linear resampler and converted to 32 kHz before MP3 encoding.
+- Release regression includes an independently generated MS-GSM 65-byte fixture whose 320 decoded PCM samples are SHA-256 checked against FFmpeg/libgsm_ms output.

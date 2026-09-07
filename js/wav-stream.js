@@ -1,8 +1,9 @@
+import {createGsm610Decoder} from "./gsm610-decoder.js";
 const ENCODER_RATES=new Set([32000,44100,48000]);
 const MAX_HEADER_SCAN=8*1024*1024;
 const MAX_CHUNKS=4096;
 const FRAME_GROUP=1152*64;
-const FORMAT_PCM=1,FORMAT_MS_ADPCM=2,FORMAT_IEEE_FLOAT=3,FORMAT_ALAW=6,FORMAT_MULAW=7,FORMAT_IMA_ADPCM=17,FORMAT_EXTENSIBLE=0xfffe;
+const FORMAT_PCM=1,FORMAT_MS_ADPCM=2,FORMAT_IEEE_FLOAT=3,FORMAT_ALAW=6,FORMAT_MULAW=7,FORMAT_IMA_ADPCM=17,FORMAT_GSM610=49,FORMAT_EXTENSIBLE=0xfffe;
 
 function readAscii(view,offset,len){let s="";for(let i=0;i<len;i++)s+=String.fromCharCode(view.getUint8(offset+i));return s}
 function abortIf(signal){if(signal?.aborted)throw new DOMException("使用者已停止","AbortError")}
@@ -13,7 +14,7 @@ function targetRateFor(sourceRate){
   if(sourceRate>=46500&&sourceRate<=48000)return 48000;
   return null;
 }
-function formatLabel(tag){return({1:"PCM",2:"Microsoft ADPCM",3:"IEEE Float",6:"G.711 A-law",7:"G.711 μ-law",17:"IMA ADPCM",65534:"WAVE_FORMAT_EXTENSIBLE"})[tag]||`WAVE format ${tag}`}
+function formatLabel(tag){return({1:"PCM",2:"Microsoft ADPCM",3:"IEEE Float",6:"G.711 A-law",7:"G.711 μ-law",17:"IMA ADPCM",49:"GSM 6.10 (Microsoft WAV)",65534:"WAVE_FORMAT_EXTENSIBLE"})[tag]||`WAVE format ${tag}`}
 function isStandardExtensibleGuid(bytes){
   if(bytes.length<40)return false;
   // KSDATAFORMAT_SUBTYPE_* = xxxxxxxx-0000-0010-8000-00AA00389B71
@@ -32,7 +33,7 @@ export async function inspectWavFile(file,{signal}={}){
   if(wave!=="WAVE"||!(riff==="RIFF"||riff==="RF64"))return{streamable:false,reason:"不是 RIFF/RF64 WAVE"};
   if(riff==="RF64")return{streamable:false,container:riff,reason:"RF64 暫不支援真正串流，將使用瀏覽器解碼模式"};
 
-  let offset=12,fmt=null,dataOffset=null,dataSize=null,chunks=0;
+  let offset=12,fmt=null,dataOffset=null,dataSize=null,factSamples=null,chunks=0;
   while(offset+8<=file.size&&offset<MAX_HEADER_SCAN&&chunks++<MAX_CHUNKS){
     abortIf(signal);
     const hdr=new Uint8Array(await file.slice(offset,offset+8).arrayBuffer());
@@ -45,27 +46,38 @@ export async function inspectWavFile(file,{signal}={}){
       const b=new Uint8Array(await file.slice(payload,payload+Math.min(size,96)).arrayBuffer());
       if(b.length<16)return{streamable:false,container:riff,reason:"WAV fmt chunk 不完整"};
       const v=new DataView(b.buffer,b.byteOffset,b.byteLength);
-      const rawFormat=v.getUint16(0,true),channels=v.getUint16(2,true),sampleRate=v.getUint32(4,true),byteRate=v.getUint32(8,true),blockAlign=v.getUint16(12,true),bitsPerSample=v.getUint16(14,true);
+      const rawFormat=v.getUint16(0,true),channels=v.getUint16(2,true),sampleRate=v.getUint32(4,true),byteRate=v.getUint32(8,true),blockAlign=v.getUint16(12,true),bitsPerSample=v.getUint16(14,true),cbSize=(size>=18&&b.length>=18)?v.getUint16(16,true):0,samplesPerBlock=(rawFormat===FORMAT_GSM610&&size>=20&&b.length>=20)?v.getUint16(18,true):null;
       let audioFormat=rawFormat,validBitsPerSample=bitsPerSample,subFormat=null;
       if(rawFormat===FORMAT_EXTENSIBLE){
         if(size<40||b.length<40||!isStandardExtensibleGuid(b)){
-          fmt={rawFormat,audioFormat:rawFormat,channels,sampleRate,byteRate,blockAlign,bitsPerSample,validBitsPerSample,subFormat:null};
+          fmt={rawFormat,audioFormat:rawFormat,channels,sampleRate,byteRate,blockAlign,bitsPerSample,validBitsPerSample,subFormat:null,cbSize,samplesPerBlock};
         }else{
           validBitsPerSample=v.getUint16(18,true)||bitsPerSample;
           subFormat=v.getUint16(24,true);
           if(subFormat===FORMAT_PCM||subFormat===FORMAT_IEEE_FLOAT)audioFormat=subFormat;
-          fmt={rawFormat,audioFormat,channels,sampleRate,byteRate,blockAlign,bitsPerSample,validBitsPerSample,subFormat};
+          fmt={rawFormat,audioFormat,channels,sampleRate,byteRate,blockAlign,bitsPerSample,validBitsPerSample,subFormat,cbSize,samplesPerBlock};
         }
-      }else fmt={rawFormat,audioFormat,channels,sampleRate,byteRate,blockAlign,bitsPerSample,validBitsPerSample,subFormat};
+      }else fmt={rawFormat,audioFormat,channels,sampleRate,byteRate,blockAlign,bitsPerSample,validBitsPerSample,subFormat,cbSize,samplesPerBlock};
+    }else if(id==="fact"&&size>=4){
+      const fb=new Uint8Array(await file.slice(payload,payload+4).arrayBuffer());if(fb.length===4)factSamples=new DataView(fb.buffer,fb.byteOffset,4).getUint32(0,true);
     }else if(id==="data"){
       dataOffset=payload;dataSize=Math.min(size,Math.max(0,file.size-payload));
-      if(fmt)break;
     }
+    if(fmt&&dataOffset!=null&&(fmt.rawFormat!==FORMAT_GSM610||factSamples!=null))break;
     offset=next;
   }
   if(!fmt||dataOffset==null||dataSize==null)return{streamable:false,container:riff,reason:"找不到必要的 fmt/data chunk"};
-  const base={container:riff,rawAudioFormat:fmt.rawFormat,audioFormat:fmt.audioFormat,formatLabel:formatLabel(fmt.rawFormat===FORMAT_EXTENSIBLE?fmt.rawFormat:fmt.audioFormat),subFormat:fmt.subFormat,channels:fmt.channels,sampleRate:fmt.sampleRate,bitsPerSample:fmt.bitsPerSample,validBitsPerSample:fmt.validBitsPerSample,blockAlign:fmt.blockAlign,dataOffset,dataSize};
+  const base={container:riff,rawAudioFormat:fmt.rawFormat,audioFormat:fmt.audioFormat,formatLabel:formatLabel(fmt.rawFormat===FORMAT_EXTENSIBLE?fmt.rawFormat:fmt.audioFormat),subFormat:fmt.subFormat,channels:fmt.channels,sampleRate:fmt.sampleRate,bitsPerSample:fmt.bitsPerSample,validBitsPerSample:fmt.validBitsPerSample,blockAlign:fmt.blockAlign,cbSize:fmt.cbSize,samplesPerBlock:fmt.samplesPerBlock,factSamples,dataOffset,dataSize};
   if(fmt.rawFormat===FORMAT_EXTENSIBLE&&!(fmt.audioFormat===FORMAT_PCM||fmt.audioFormat===FORMAT_IEEE_FLOAT))return{...base,streamable:false,reason:`WAVE_FORMAT_EXTENSIBLE 子格式 ${fmt.subFormat??"未知"} 尚不支援`};
+  if(fmt.audioFormat===FORMAT_GSM610){
+    if(fmt.channels!==1)return{...base,streamable:false,reason:`GSM 6.10 WAV 預期單聲道，實際為 ${fmt.channels} 聲道`};
+    if(fmt.sampleRate!==8000)return{...base,streamable:false,reason:`GSM 6.10 WAV 預期 8000 Hz，實際為 ${fmt.sampleRate} Hz`};
+    if(fmt.blockAlign!==65)return{...base,streamable:false,reason:`GSM 6.10 WAV blockAlign 預期 65，實際為 ${fmt.blockAlign}`};
+    if(fmt.samplesPerBlock!==320)return{...base,streamable:false,reason:`GSM 6.10 WAV samplesPerBlock 預期 320，實際為 ${fmt.samplesPerBlock??"缺少"}`};
+    if(dataSize<65||dataSize%65!==0)return{...base,streamable:false,reason:"GSM 6.10 WAV data chunk 不是完整的 65-byte block"};
+    const blocks=dataSize/65,maxFrames=blocks*320,frames=(Number.isInteger(factSamples)&&factSamples>0&&factSamples<=maxFrames)?factSamples:maxFrames,duration=frames/8000;
+    return{...base,streamable:true,compressed:true,bytesPerSample:0,blocks,frames,duration,targetSampleRate:32000,resampled:true,codecName:"GSM 6.10 / Microsoft WAV (format 49)"};
+  }
   if([FORMAT_MS_ADPCM,FORMAT_IMA_ADPCM].includes(fmt.audioFormat))return{...base,streamable:false,reason:`${formatLabel(fmt.audioFormat)} 尚未內建 Native 解碼`};
   if(![FORMAT_PCM,FORMAT_IEEE_FLOAT,FORMAT_ALAW,FORMAT_MULAW].includes(fmt.audioFormat))return{...base,streamable:false,reason:`${formatLabel(fmt.audioFormat)} 尚未內建 Native 解碼`};
   if(fmt.channels<1||fmt.channels>2)return{...base,streamable:false,reason:`WAV ${fmt.channels} 聲道尚不支援 Native 串流`};
@@ -147,8 +159,28 @@ function createLinearResampler(sourceRate,targetRate,channels,totalSourceFrames)
   return{process:pcm=>process(pcm,false),flush:()=>process(Array.from({length:channels},()=>new Float32Array(0)),true),targetFrames};
 }
 
+function decodeGsmBlocks(bytes,decoder,maxFrames=Infinity){
+  const blocks=Math.floor(bytes.byteLength/65),take=Math.min(maxFrames,blocks*320),out=new Float32Array(Math.max(0,take));let written=0;
+  for(let b=0;b<blocks&&written<take;b++){
+    const pcm=decoder.decodeMsBlock(bytes.subarray(b*65,b*65+65)),n=Math.min(320,take-written);
+    for(let i=0;i<n;i++)out[written+i]=pcm[i]/32768;
+    written+=n;
+  }
+  return out;
+}
+
 export async function scanWavPeak(file,info,{forceMono=false,signal,onProgress}={}){
-  let peak=0,readFrames=0;const framesPerRead=FRAME_GROUP,bytesPerRead=framesPerRead*info.blockAlign;
+  let peak=0,readFrames=0;
+  if(info.audioFormat===FORMAT_GSM610){
+    const decoder=createGsm610Decoder(),blocksPerRead=Math.max(1,Math.floor(FRAME_GROUP/320)),bytesPerRead=blocksPerRead*65;
+    for(let pos=0;pos<info.dataSize&&readFrames<info.frames;pos+=bytesPerRead){
+      abortIf(signal);const end=Math.min(info.dataSize,pos+bytesPerRead),bytes=new Uint8Array(await file.slice(info.dataOffset+pos,info.dataOffset+end).arrayBuffer()),pcm=decodeGsmBlocks(bytes,decoder,info.frames-readFrames);
+      for(let i=0;i<pcm.length;i++){const a=Math.abs(pcm[i]);if(a>peak)peak=a}
+      readFrames+=pcm.length;onProgress?.(Math.min(1,readFrames/info.frames));
+    }
+    return peak;
+  }
+  const framesPerRead=FRAME_GROUP,bytesPerRead=framesPerRead*info.blockAlign;
   for(let pos=0;pos<info.dataSize;pos+=bytesPerRead){
     abortIf(signal);const end=Math.min(info.dataSize,pos+bytesPerRead),bytes=new Uint8Array(await file.slice(info.dataOffset+pos,info.dataOffset+end).arrayBuffer()),pcm=decodeChunk(bytes,info,{forceMono});
     for(const ch of pcm)for(let i=0;i<ch.length;i++){const a=Math.abs(ch[i]);if(a>peak)peak=a}
@@ -158,14 +190,24 @@ export async function scanWavPeak(file,info,{forceMono=false,signal,onProgress}=
 }
 
 export async function streamWavPcm(file,info,{forceMono=false,signal,onChunk,onProgress}={}){
-  let readFrames=0,writtenFrames=0;const framesPerRead=FRAME_GROUP,bytesPerRead=framesPerRead*info.blockAlign,outChannels=forceMono?1:info.channels,targetRate=info.targetSampleRate||info.sampleRate,resampler=createLinearResampler(info.sampleRate,targetRate,outChannels,info.frames);
-  for(let pos=0;pos<info.dataSize;pos+=bytesPerRead){
-    abortIf(signal);const end=Math.min(info.dataSize,pos+bytesPerRead),bytes=new Uint8Array(await file.slice(info.dataOffset+pos,info.dataOffset+end).arrayBuffer()),pcm=decodeChunk(bytes,info,{forceMono}),out=resampler.process(pcm);
-    if(out?.[0]?.length){await onChunk?.(out);writtenFrames+=out[0].length}
-    readFrames+=pcm[0]?.length||0;onProgress?.(Math.min(1,readFrames/info.frames));
+  let readFrames=0,writtenFrames=0;const outChannels=forceMono?1:info.channels,targetRate=info.targetSampleRate||info.sampleRate,resampler=createLinearResampler(info.sampleRate,targetRate,outChannels,info.frames);
+  if(info.audioFormat===FORMAT_GSM610){
+    const decoder=createGsm610Decoder(),blocksPerRead=Math.max(1,Math.floor(FRAME_GROUP/320)),bytesPerRead=blocksPerRead*65;
+    for(let pos=0;pos<info.dataSize&&readFrames<info.frames;pos+=bytesPerRead){
+      abortIf(signal);const end=Math.min(info.dataSize,pos+bytesPerRead),bytes=new Uint8Array(await file.slice(info.dataOffset+pos,info.dataOffset+end).arrayBuffer()),mono=decodeGsmBlocks(bytes,decoder,info.frames-readFrames),pcm=[mono],out=resampler.process(pcm);
+      if(out?.[0]?.length){await onChunk?.(out);writtenFrames+=out[0].length}
+      readFrames+=mono.length;onProgress?.(Math.min(1,readFrames/info.frames));
+    }
+  }else{
+    const framesPerRead=FRAME_GROUP,bytesPerRead=framesPerRead*info.blockAlign;
+    for(let pos=0;pos<info.dataSize;pos+=bytesPerRead){
+      abortIf(signal);const end=Math.min(info.dataSize,pos+bytesPerRead),bytes=new Uint8Array(await file.slice(info.dataOffset+pos,info.dataOffset+end).arrayBuffer()),pcm=decodeChunk(bytes,info,{forceMono}),out=resampler.process(pcm);
+      if(out?.[0]?.length){await onChunk?.(out);writtenFrames+=out[0].length}
+      readFrames+=pcm[0]?.length||0;onProgress?.(Math.min(1,readFrames/info.frames));
+    }
   }
   const tail=resampler.flush();if(tail?.[0]?.length){await onChunk?.(tail);writtenFrames+=tail[0].length}
   return{frames:writtenFrames,sourceFrames:readFrames,channels:outChannels,sampleRate:targetRate,sourceSampleRate:info.sampleRate,duration:readFrames/info.sampleRate,resampled:targetRate!==info.sampleRate};
 }
 
-export const WAV_STREAM_INFO=Object.freeze({sampleRates:[32000,44100,48000],sourceSampleRateRange:[8000,48000],channels:[1,2],pcmBits:[8,16,24,32],floatBits:[32],telephonyCodecs:["G.711 A-law","G.711 μ-law"],extensibleSubFormats:["PCM","IEEE Float"],maxHeaderScan:MAX_HEADER_SCAN});
+export const WAV_STREAM_INFO=Object.freeze({sampleRates:[32000,44100,48000],sourceSampleRateRange:[8000,48000],channels:[1,2],pcmBits:[8,16,24,32],floatBits:[32],telephonyCodecs:["G.711 A-law","G.711 μ-law","GSM 6.10 / WAVE format 49"],extensibleSubFormats:["PCM","IEEE Float"],maxHeaderScan:MAX_HEADER_SCAN});

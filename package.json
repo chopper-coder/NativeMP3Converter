@@ -1,7 +1,7 @@
 {
   "name": "native-mp3-converter",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "private": true,
-  "description": "Classic-bundle zero-dependency browser-local MP3 converter with File System Access telephony WAV compatibility, same-folder authorization UX, picker-ID compatibility, CHOPPER Native MP3 Core v0.4.1, embedded Blob Worker, streaming WAV encoding, safe folder output and recovery"
+  "description": "Classic-bundle zero-dependency browser-local MP3 converter with Native GSM 6.10 / Microsoft WAV format 49 decoding, telephony WAV support, same-folder authorization UX, picker-ID compatibility, CHOPPER Native MP3 Core v0.4.1, embedded Blob Worker, streaming WAV encoding, safe folder output and recovery"
 }

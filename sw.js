@@ -1,5 +1,5 @@
 const CACHE_PREFIX="chopper-native-mp3-v1-";
-const CACHE="chopper-native-mp3-v1-cache-6-telephony-wav";
+const CACHE="chopper-native-mp3-v1-cache-7-gsm610-wav";
 const ASSETS=["./","./index.html","./css/style.css","./js/app.bundle.js","./js/boot-check.js"];
 const ASSET_URLS=new Set(ASSETS.map(a=>new URL(a,self.registration.scope).href));
 const assetRequests=()=>[...ASSET_URLS].map(url=>new Request(url,{cache:"reload",credentials:"same-origin"}));

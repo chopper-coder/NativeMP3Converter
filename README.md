@@ -1,4 +1,4 @@
-# 音檔轉 MP3 V1.0.5｜Telephony WAV Compatibility Edition
+# 音檔轉 MP3 V1.0.6｜GSM 6.10 WAV Compatibility Edition
 
 這是一個重新建立的乾淨專案。專案名稱建議使用 **NativeMP3Converter**，不要覆蓋舊的 `AudioToMP3` Repository。
 
@@ -104,3 +104,9 @@ V1.0.5 不再把所有非標準 WAV 都交給瀏覽器。Native WAV 串流路徑
 - 8 kHz、16 kHz、22.05 kHz、24 kHz 等常見語音 WAV 可在 Native 串流路徑線性重採樣至 32 kHz，再交給 Native MP3 encoder，不依賴 `decodeAudioData()`。
 
 這特別針對電話、報案、無線電與錄音系統常見的 WAV。Microsoft ADPCM / IMA ADPCM 目前仍未內建；若遇到這類檔案，錯誤訊息會直接顯示實際 WAV codec，而不是只顯示「瀏覽器無法解碼」。
+
+## V1.0.6 GSM 6.10 / WAVE format 49
+
+針對報案、電話與舊式錄音系統常見的 `WAVE_FORMAT_GSM610 (0x0031 / decimal 49)`，本版新增純 JavaScript Native GSM 06.10 RPE-LTP 解碼器。Microsoft WAV 變體使用 65-byte block 承載兩個 160-sample GSM frame（每 block 320 samples）；程式在本機解包、解碼為 8 kHz mono PCM，再串流重採樣至 32 kHz 並交給 CHOPPER Native MP3 Encoder。Runtime 不需要 FFmpeg、WASM、CDN 或第三方套件。
+
+Native GSM 6.10 路徑會驗證 `channels=1`、`sampleRate=8000`、`blockAlign=65`、`samplesPerBlock=320`，並優先使用 WAV `fact` chunk 的有效 sample count，避免尾端 padding 被誤算為實際錄音。

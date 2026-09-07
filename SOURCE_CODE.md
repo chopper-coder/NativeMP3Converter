@@ -34,3 +34,8 @@ GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build
 ## V1.0.5 Telephony WAV
 
 `js/wav-stream.js` 新增 WAVE_FORMAT_EXTENSIBLE PCM/Float、G.711 A-law、G.711 μ-law 的 bounded native parser/decoder，以及 8～48 kHz 常見來源到 MP3 encoder 32/44.1/48 kHz 的串流重採樣。`scripts/wav_compatibility_test.mjs` 驗證 8 kHz PCM、μ-law、A-law 與 16 kHz extensible PCM 可直接產生合法 32 kHz MP3。
+
+
+## V1.0.6 GSM 6.10 WAV
+
+`js/gsm610-decoder.js` 新增純 JavaScript GSM 06.10 RPE-LTP decoder，並由 `js/wav-stream.js` 解析 WAVE format 49 (`0x0031`) 的 65-byte Microsoft GSM block。每 block 解出 320 個 8 kHz mono PCM samples，再串流重採樣至 32 kHz 交給 Native MP3 encoder。`scripts/gsm610_compatibility_test.mjs` 以獨立 decoder fixture 驗證 PCM bit-exactness 與最終 MP3 結構。

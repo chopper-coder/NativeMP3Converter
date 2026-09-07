@@ -1,4 +1,4 @@
-# Security & Privacy — NativeMP3Converter V1.0.5
+# Security & Privacy — NativeMP3Converter V1.0.6
 
 ## 隱私邊界
 
@@ -41,4 +41,4 @@
 - 非串流來源先做 PCM working-set 估算。
 - 大型 WAV 僅在相容 streaming path 下處理；不相容大型檔案不會強行完整 decode。
 
-詳見 `SECURITY_AUDIT_V1.0.md`、`SECURITY_AUDIT_V1.0.4.md` 與 `SECURITY_AUDIT_V1.0.5.md`。
+詳見 `SECURITY_AUDIT_V1.0.md`、`SECURITY_AUDIT_V1.0.4.md`、`SECURITY_AUDIT_V1.0.5.md` 與 `SECURITY_AUDIT_V1.0.6.md`。
