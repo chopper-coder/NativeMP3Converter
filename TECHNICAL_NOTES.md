@@ -16,7 +16,7 @@ WAV File
  → safe commit
 ```
 
-支援 RIFF PCM 8/16/24/32-bit 與 IEEE Float32，1～2 聲道，32/44.1/48 kHz。RF64 與 WAVE_FORMAT_EXTENSIBLE 暫不走 Native streaming path。
+支援 RIFF PCM 8/16/24/32-bit、IEEE Float32、G.711 A-law / μ-law，以及 WAVE_FORMAT_EXTENSIBLE 的 PCM / Float 子格式，1～2 聲道。來源 8～48 kHz；MP3 encoder 仍使用 32/44.1/48 kHz，其他常見語音取樣率會在串流途中重採樣。RF64 與 ADPCM 暫不走 Native streaming path。
 
 ### B. Browser Decode Fallback
 
@@ -84,3 +84,10 @@ GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build
 ## V1.0.4 Same Folder Workflow
 
 同資料夾輸出改為顯式來源資料夾授權流程。一般 File / webkitdirectory 匯入不會被視為可寫入權限；使用者選擇 alongside 後，由 `showDirectoryPicker()` 取得 readwrite Handle，逐筆核對目前來源，再把 `sourceDirHandle` 綁定到已驗證項目。全部核對成功前不會啟用直接寫回。
+
+
+## V1.0.5 Telephony WAV Native Decode
+
+WAV parser 會解析 `fmt ` 的實際 format tag，而不是只看 `.wav` 副檔名。G.711 A-law / μ-law 以 JavaScript 逐 sample 解碼；WAVE_FORMAT_EXTENSIBLE 會驗證標準 SubFormat GUID，只接受 PCM / IEEE Float。低取樣率語音在串流中以連續狀態線性 interpolation 重採樣至 32 kHz，避免把整份 PCM 留在記憶體。
+
+目前明確不宣稱支援 Microsoft ADPCM (format 2) 與 IMA ADPCM (format 17)。遇到時 parser 會回報 codec 名稱，讓後續可針對實際來源再擴充。

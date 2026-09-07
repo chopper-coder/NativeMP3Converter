@@ -9,10 +9,11 @@ export async function streamWavToMp3(file,{bitrate=128,forceMono=false,signal,on
   let peak=0;peak=await scanWavPeak(file,info,{forceMono,signal,onProgress:p=>onProgress?.(p*.18,"scan")});
   const inputScale=peak>PEAK_LIMIT?PEAK_LIMIT/peak:1,channels=forceMono?1:info.channels;
   let used=0,capacity=0,frames=0,bytes=0;const chunks=[];
-  const encoder=new StreamingMp3Encoder({channels,bitrate,sampleRate:info.sampleRate,inputScale,onStats:s=>{used+=s.usedBits;capacity+=s.mainCapacity;frames++;}});
+  const targetSampleRate=info.targetSampleRate||info.sampleRate;
+  const encoder=new StreamingMp3Encoder({channels,bitrate,sampleRate:targetSampleRate,inputScale,onStats:s=>{used+=s.usedBits;capacity+=s.mainCapacity;frames++;}});
   async function emit(frameList){if(!frameList.length)return;const chunk=concat(frameList);bytes+=chunk.length;if(collect)chunks.push(chunk);await onMp3Chunk?.(chunk)}
   await streamWavPcm(file,info,{forceMono,signal,onChunk:async pcm=>emit(encoder.push(pcm)),onProgress:p=>onProgress?.(.18+p*.82,"encode")});
   await emit(encoder.flush());onProgress?.(1,"done");
   const encoderStats={frames,mainDataUsage:capacity?used/capacity:0,inputScale,peakProtected:inputScale<0.999999,streaming:true,sourcePeak:peak};
-  return{info,channels,sampleRate:info.sampleRate,duration:info.duration,outputBytes:bytes,encoderStats,blob:collect?new Blob(chunks,{type:"audio/mpeg"}):null};
+  return{info,channels,sampleRate:targetSampleRate,sourceSampleRate:info.sampleRate,duration:info.duration,outputBytes:bytes,encoderStats:{...encoderStats,sourceCodec:info.codecName||info.formatLabel||`WAVE format ${info.audioFormat}`,sourceSampleRate:info.sampleRate,targetSampleRate,resampled:targetSampleRate!==info.sampleRate},blob:collect?new Blob(chunks,{type:"audio/mpeg"}):null};
 }

@@ -29,3 +29,8 @@ GitHub Pages 正式執行入口為 `js/app.bundle.js`。此檔由 `scripts/build
 ## V1.0.4 Same Folder Workflow
 
 同資料夾輸出改為顯式來源資料夾授權流程。一般 File / webkitdirectory 匯入不會被視為可寫入權限；使用者選擇 alongside 後，由 `showDirectoryPicker()` 取得 readwrite Handle，逐筆核對目前來源，再把 `sourceDirHandle` 綁定到已驗證項目。全部核對成功前不會啟用直接寫回。
+
+
+## V1.0.5 Telephony WAV
+
+`js/wav-stream.js` 新增 WAVE_FORMAT_EXTENSIBLE PCM/Float、G.711 A-law、G.711 μ-law 的 bounded native parser/decoder，以及 8～48 kHz 常見來源到 MP3 encoder 32/44.1/48 kHz 的串流重採樣。`scripts/wav_compatibility_test.mjs` 驗證 8 kHz PCM、μ-law、A-law 與 16 kHz extensible PCM 可直接產生合法 32 kHz MP3。

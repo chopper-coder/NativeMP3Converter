@@ -1,4 +1,4 @@
-# 音檔轉 MP3 V1.0.4｜Same Folder Workflow UX Edition
+# 音檔轉 MP3 V1.0.5｜Telephony WAV Compatibility Edition
 
 這是一個重新建立的乾淨專案。專案名稱建議使用 **NativeMP3Converter**，不要覆蓋舊的 `AudioToMP3` Repository。
 
@@ -67,6 +67,7 @@ node scripts/classic_bundle_boot_test.mjs
 node scripts/output_folder_workflow_test.mjs
 node scripts/same_folder_workflow_test.mjs
 node scripts/picker_id_limit_test.mjs
+node scripts/wav_compatibility_test.mjs
 node scripts/external_codec_test.mjs
 ```
 
@@ -89,3 +90,17 @@ Chromium 的 File System Access picker `id` 最長 32 字元。V1.0.2 的「定�
 「與來源音檔放在同一資料夾」現在可以直接選擇，不再要求使用者事前知道什麼是工作資料夾。若目前音檔是透過「選擇音檔」或傳統「匯入資料夾」加入，選取同資料夾輸出時會立即開啟來源資料夾授權。程式會逐筆核對相對路徑、檔名、大小與修改時間；必要時再以檔案指紋比對。只有全部來源都能在使用者授權的資料夾內核對成功，才會把直接寫回權限套用到目前清單。
 
 若目前清單尚未有音檔，選取同資料夾輸出後選擇資料夾，會直接以該資料夾作為來源並掃描。另保留「📂 選擇來源音檔資料夾」按鈕，供想一次完成授權與掃描的使用者使用。
+
+
+## V1.0.5 Telephony WAV Compatibility
+
+V1.0.5 不再把所有非標準 WAV 都交給瀏覽器。Native WAV 串流路徑新增：
+
+- PCM 8/16/24/32-bit，1～2 聲道。
+- IEEE Float32。
+- `WAVE_FORMAT_EXTENSIBLE` 的 PCM / IEEE Float 子格式。
+- G.711 μ-law (`WAVE_FORMAT_MULAW`, format 7)。
+- G.711 A-law (`WAVE_FORMAT_ALAW`, format 6)。
+- 8 kHz、16 kHz、22.05 kHz、24 kHz 等常見語音 WAV 可在 Native 串流路徑線性重採樣至 32 kHz，再交給 Native MP3 encoder，不依賴 `decodeAudioData()`。
+
+這特別針對電話、報案、無線電與錄音系統常見的 WAV。Microsoft ADPCM / IMA ADPCM 目前仍未內建；若遇到這類檔案，錯誤訊息會直接顯示實際 WAV codec，而不是只顯示「瀏覽器無法解碼」。

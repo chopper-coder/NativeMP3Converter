@@ -399,7 +399,7 @@ async function convertOne(item,done,total,settings){
 
     let blob=null,checked=null;
     if(item.streamInfo?.streamable){
-      const actualChannels=settings.channels===1?1:item.streamInfo.channels;item.conversionSettings={...settings,actualChannels,actualSampleRate:item.streamInfo.sampleRate,streaming:true};
+      const actualChannels=settings.channels===1?1:item.streamInfo.channels;item.conversionSettings={...settings,actualChannels,actualSampleRate:item.streamInfo.targetSampleRate||item.streamInfo.sampleRate,sourceSampleRate:item.streamInfo.sampleRate,sourceCodec:item.streamInfo.codecName||item.streamInfo.formatLabel,streaming:true,resampled:!!item.streamInfo.resampled};
       if(outputModeIsDirect()){
         if(!plan)plan=await planDirectTarget(item);item.outputDirHandle=plan.dir;const streamed=await streamWavDirect(item,plan,settings);item.outputHandle=streamed.handle;item.outputStorage="direct";item.encoderStats=streamed.result.encoderStats;item.outputSize=streamed.result.outputBytes;item.outputDuration=streamed.checked.duration;item.validation=streamed.checked.validation+(item.encoderStats?.peakProtected?"｜✅ 峰值保護":"")+"｜✅ 低記憶體 WAV 串流";checked=streamed.checked;
       }else{
@@ -421,7 +421,7 @@ async function convertOne(item,done,total,settings){
   }catch(err){
     const aborted=cancelRequested||err?.name==="AbortError"||String(err?.message||err).includes("使用者已停止");
     if(aborted){item.status="cancelled";item.progress=0;item.message="已停止；未完成的 .part 暫存已嘗試清理，可重新轉換";record(item,"cancelled")}
-    else{item.status="error";item.progress=0;const msg=String(err?.message||err);if(msg.includes("NotAllowed")||err?.name==="NotAllowedError"){permissionPaused=true;els.restoreFolders.hidden=false}item.message=msg.includes("Quota")?"轉換失敗：瀏覽器暫存空間不足":(msg.includes("NotAllowed")||err?.name==="NotAllowedError")?"轉換暫停：資料夾寫入權限遭拒，請重新授權後接續":msg.includes("瀏覽器無法解碼")?`轉換失敗：${msg}。Native 版來源格式取決於目前瀏覽器支援。`:msg.includes("PCM 工作記憶體")?`已保護性略過：${msg}`:msg.includes("輸出長度異常")||msg.includes("MP3 frame")?`完整性驗證失敗，未提交輸出：${msg}`:`轉換失敗：${msg}`;appendLog(item.message);record(item,"error")}
+    else{item.status="error";item.progress=0;const msg=String(err?.message||err);if(msg.includes("NotAllowed")||err?.name==="NotAllowedError"){permissionPaused=true;els.restoreFolders.hidden=false}item.message=msg.includes("Quota")?"轉換失敗：瀏覽器暫存空間不足":(msg.includes("NotAllowed")||err?.name==="NotAllowedError")?"轉換暫停：資料夾寫入權限遭拒，請重新授權後接續":msg.includes("瀏覽器無法解碼")?`轉換失敗：${msg}${extOf(item.file.name)==="wav"&&item.streamInfo?.reason?`。WAV 解析結果：${item.streamInfo.reason}`:""}。目前 Native WAV 已支援 PCM / IEEE Float / WAVE_FORMAT_EXTENSIBLE(PCM/Float) / G.711 A-law / μ-law；其他壓縮 WAV 仍可能需要另行支援。`:msg.includes("PCM 工作記憶體")?`已保護性略過：${msg}`:msg.includes("輸出長度異常")||msg.includes("MP3 frame")?`完整性驗證失敗，未提交輸出：${msg}`:`轉換失敗：${msg}`;appendLog(item.message);record(item,"error")}
     return false;
   }finally{currentItem=null;render();updateScanSummary()}
 }
